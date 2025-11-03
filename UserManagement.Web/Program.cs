@@ -1,7 +1,9 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using UserManagement.Data;
 using Westwind.AspNetCore.Markdown;
 
 
@@ -22,12 +24,36 @@ try
 
     // Add services to the container.
     builder.Services
-        .AddDataAccess()
+        .AddDataAccess(builder.Configuration, builder.Environment)
         .AddDomainServices()
         .AddMarkdown()
         .AddControllersWithViews();
 
     var app = builder.Build();
+
+    //DB check prod
+    if (!builder.Environment.IsDevelopment())
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+            if (!dbContext.Database.CanConnect())
+            {
+                Log.Fatal("Cannot connect to production database. Application will stop.");
+                throw new InvalidOperationException("Cannot connect to the production database.");
+            }
+
+            Log.Information("Successfully connected to the production database.");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Database connection test failed. Application will stop.");
+            throw; // Stop the app
+        }
+    }
+
     app.UseSerilogRequestLogging();
     app.UseMarkdown();
 
