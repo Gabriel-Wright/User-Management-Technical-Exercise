@@ -1,38 +1,63 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using Westwind.AspNetCore.Markdown;
 
-var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services
-    .AddDataAccess()
-    .AddDomainServices()
-    .AddMarkdown()
-    .AddControllersWithViews();
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-var app = builder.Build();
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-app.UseMarkdown();
-
-app.UseHsts();
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
-app.UseAuthorization();
-
-app.MapDefaultControllerRoute();
-
-
-if (builder.Environment.IsDevelopment())
+try
 {
-    logger.LogInformation("Running in Development environment");
-}
-else
-{
-    logger.LogInformation("App started"); // production-safe log
-}
+    Log.Information("Starting web host");
 
-app.Run();
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((context, services, configuration) =>
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .Enrich.FromLogContext());
+
+    // Add services to the container.
+    builder.Services
+        .AddDataAccess()
+        .AddDomainServices()
+        .AddMarkdown()
+        .AddControllersWithViews();
+
+    var app = builder.Build();
+    app.UseSerilogRequestLogging();
+    app.UseMarkdown();
+
+    app.UseHsts();
+    app.UseHttpsRedirection();
+    app.UseStaticFiles();
+    app.UseRouting();
+    app.UseAuthorization();
+
+    app.MapDefaultControllerRoute();
+
+
+    if (builder.Environment.IsDevelopment())
+    {
+        Log.Information("Running in Development environment");
+    }
+    else
+    {
+        Log.Information("App started"); // production-safe log
+    }
+
+    app.Run();
+
+}
+catch
+{
+    Log.Fatal("Application start-up failed");
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
+}

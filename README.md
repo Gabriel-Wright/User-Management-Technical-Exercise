@@ -1,7 +1,15 @@
 ## Environment Differences
 
-When running either using visual studio code or by `dotnet run` - `ASPNETCORE_ENVIRONMENT=development`.
+When running locally (either by visual studio code or by `dotnet run`), `ASPNETCORE_ENVIRONMENT=development`.
+In this case console output includes verbose logs, while log files capture entries up to the Debug level.
 
-In this case there is more verbose logging: showing debugs.
+When running published release build e.g. from `dotnet publish ...`, `ASPNETCORE_ENVIRONMENT=production`.
+Only Information level logs and above are written to both the console and log files.
 
-A published release build i.e. from `dotnet publish ...` with `ASPNETCORE_ENVIRONMENT=production`. Will remove debug logs.
+### Packages added
+
+---
+
+-   Serilog.AspNetCore — Structured logging support
+-   Serilog.Sinks.File — File-based log output
+-   Serilog.Sinks.Console — Console log output
