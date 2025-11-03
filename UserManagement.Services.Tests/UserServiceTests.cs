@@ -20,11 +20,11 @@ public class UserServiceTests
         result.Should().BeSameAs(users);
     }
 
-    private IQueryable<User> SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
+    private IQueryable<UserEntity> SetupUsers(string forename = "Johnny", string surname = "User", string email = "juser@example.com", bool isActive = true)
     {
         var users = new[]
         {
-            new User
+            new UserEntity
             {
                 Forename = forename,
                 Surname = surname,
@@ -34,7 +34,7 @@ public class UserServiceTests
         }.AsQueryable();
 
         _dataContext
-            .Setup(s => s.GetAll<User>())
+            .Setup(s => s.GetAll<UserEntity>())
             .Returns(users);
 
         return users;

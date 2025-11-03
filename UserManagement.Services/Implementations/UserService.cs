@@ -16,10 +16,10 @@ public class UserService : IUserService
     /// </summary>
     /// <param name="isActive"></param>
     /// <returns></returns>
-    public IEnumerable<User> FilterByActive(bool isActive)
+    public IEnumerable<UserEntity> FilterByActive(bool isActive)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<User> GetAll() => _dataAccess.GetAll<User>();
+    public IEnumerable<UserEntity> GetAll() => _dataAccess.GetAll<UserEntity>();
 }

@@ -10,22 +10,22 @@ namespace UserManagement.Data.Tests;
 public class DataContextTests
 {
     [Fact]
-    public async Task GetAll_WhenNewEntityAdded_MustIncludeNewEntity()
+    public async Task GetAll_WhenNewUserEntityAdded_MustIncludeNewUserEntity()
     {
         // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var context = CreateContext();
 
-        var entity = new User
+        var entity = new UserEntity
         {
             Forename = "Brand New",
             Surname = "User",
             Email = "brandnewuser@example.com",
-            UserRole = User.Role.User,
+            UserRole = "User",
         };
         await context.CreateAsync(entity);
 
         // Act: Invokes the method under test with the arranged parameters.
-        var result = context.GetAll<User>();
+        var result = context.GetAll<UserEntity>();
 
         // Assert: Verifies that the action of the method under test behaves as expected.
         result
@@ -34,35 +34,35 @@ public class DataContextTests
     }
 
     [Fact]
-    public async Task Update_WhenEntityChanged_ShouldPersistChanges()
+    public async Task Update_WhenUserEntityChanged_ShouldPersistChanges()
     {
         var context = CreateContext();
-        var user = new User { Forename = "Test", Surname = "User", Email = "test@user.com" };
+        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
         await context.CreateAsync(user);
 
         user.Surname = "Updated";
         context.Update(user);
 
-        var result = context.GetAll<User>().First(u => u.Email == "test@user.com");
+        var result = context.GetAll<UserEntity>().First(u => u.Email == "test@user.com");
         result.Surname.Should().Be("Updated");
     }
 
     [Fact]
-    public async Task GetAll_WhenDeleted_MustNotIncludeDeletedEntity()
+    public async Task GetAll_WhenDeleted_MustNotIncludeDeletedUserEntity()
     {
         // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var context = CreateContext();
 
-        var entity = new User
+        var entity = new UserEntity
         {
             Forename = "Brand New",
             Surname = "User",
             Email = "brandnewuser@example.com",
-            UserRole = User.Role.User,
+            UserRole = "User",
         };
         await context.CreateAsync(entity);
 
-        var result = context.GetAll<User>();
+        var result = context.GetAll<UserEntity>();
 
         result
             .Should().Contain(s => s.Email == entity.Email)
@@ -72,7 +72,7 @@ public class DataContextTests
         await context.DeleteAsync(entity);
 
 
-        result = context.GetAll<User>();
+        result = context.GetAll<UserEntity>();
 
         ////Should be deleted now
         result.Should().NotContain(s => s.Email == entity.Email);
@@ -82,30 +82,30 @@ public class DataContextTests
     public async Task AuditEntity_ShouldBePersisted()
     {
         var context = CreateContext();
-        var audit = new Audit { EntityId = 1, Action = Audit.AuditAction.Created };
+        var audit = new AuditEntity { EntityId = 1, AuditAction = "Created" };
 
         await context.CreateAsync(audit);
 
-        var result = await context.GetAll<Audit>().FirstAsync();
+        var result = await context.GetAll<AuditEntity>().FirstAsync();
         result.EntityId.Should().Be(1);
-        result.Action.Should().Be(Audit.AuditAction.Created);
+        result.AuditAction.Should().Be("Created");
     }
 
     [Fact]
     public async Task AuditEntity_WhenDeleted_MustNotIncludeEntity()
     {
         var context = CreateContext();
-        var audit = new Audit { EntityId = 1, Action = Audit.AuditAction.Created };
+        var audit = new AuditEntity { EntityId = 1, AuditAction = "Created" };
 
         await context.CreateAsync(audit);
 
-        var result = await context.GetAll<Audit>().FirstAsync();
+        var result = await context.GetAll<AuditEntity>().FirstAsync();
         result.EntityId.Should().Be(1);
-        result.Action.Should().Be(Audit.AuditAction.Created);
+        result.AuditAction.Should().Be("Created");
 
         await context.DeleteAsync(audit);
 
-        var audits = context.GetAll<Audit>();
+        var audits = context.GetAll<AuditEntity>();
         audits.Should().NotContain(a => a.EntityId == 1);
     }
 
