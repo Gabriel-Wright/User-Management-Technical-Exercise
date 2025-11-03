@@ -1,9 +1,21 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Models;
 
 namespace UserManagement.Data;
 
+/// <summary>
+/// Here I intentionally do not use separate repository classes for each entity.
+/// This approach keeps the architecture light while still allowing separation of
+/// concerns through services and DTOs at higher layers.
+/// 
+/// - Users: full CRUD operations through IDataContext
+/// - Audits: append-only logging of user operations; updates/deletes are not expected
+/// 
+/// For larger or more complex applications, dedicated repositories would be introduced, but for this
+/// exercise and scope, decided to keep the single DataContext with generic methods.
+/// </summary>
 public class DataContext : DbContext, IDataContext
 {
     public DataContext(DbContextOptions<DataContext> options)
@@ -33,24 +45,27 @@ public class DataContext : DbContext, IDataContext
 
     public DbSet<User>? Users { get; set; }
 
+    public DbSet<Audit>? Audits { get; set; }
+
     public IQueryable<TEntity> GetAll<TEntity>() where TEntity : class
         => base.Set<TEntity>();
 
-    public void Create<TEntity>(TEntity entity) where TEntity : class
+    public async Task CreateAsync<TEntity>(TEntity entity) where TEntity : class
     {
-        base.Add(entity);
-        SaveChanges();
+        await AddAsync(entity);
+        await SaveChangesAsync();
     }
 
-    public new void Update<TEntity>(TEntity entity) where TEntity : class
+    public async Task UpdateAsync<TEntity>(TEntity entity) where TEntity : class
     {
-        base.Update(entity);
-        SaveChanges();
+        Update(entity);
+        await SaveChangesAsync();
     }
 
-    public void Delete<TEntity>(TEntity entity) where TEntity : class
+    public async Task DeleteAsync<TEntity>(TEntity entity) where TEntity : class
     {
-        base.Remove(entity);
-        SaveChanges();
+        Remove(entity);
+        await SaveChangesAsync();
     }
+
 }
