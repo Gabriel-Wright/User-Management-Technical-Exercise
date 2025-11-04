@@ -8,7 +8,7 @@ using Serilog;
 /// <summary>
 /// This class is intended to catch errors that occur on Service Layer, that are either not caught at 
 /// Controller Level e.g. Checking if an email is unique - or if there's some Man in the Middle attack, 
-/// e.g. data is maliciously altered between layers.
+/// e.g. data is maliciously altered between layers. Overall - aim is to provide neater responses back to client-side.
 /// 
 /// I have exposed the error messages in the HTTP Responses for ValidationException, ArgumentException,
 /// InvalidOperationException since I do not think the data in error messages should be secretive?

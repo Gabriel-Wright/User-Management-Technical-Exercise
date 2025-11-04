@@ -27,6 +27,10 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    /// Standard Get All Endpoint - unordered
+    /// </summary>
+    /// <returns>Unordered list of all users</returns>
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -36,6 +40,11 @@ public class UsersController : ControllerBase
         return Ok(dtos);
     }
 
+    /// <summary>
+    /// Gets all users that are either active or not active
+    /// </summary>
+    /// <param name="isActive">Are users active or not</param>
+    /// <returns>Either all active or inactive users</returns>
     [HttpGet("status")]
     public async Task<IActionResult> GetUsersByStatus([FromQuery] bool isActive)
     {
@@ -46,8 +55,13 @@ public class UsersController : ControllerBase
         return Ok(dtos);
     }
 
-    // Actually this end point seems kind of annoying - since you need both ? 
-    // Will refactor this in future
+    /// <summary>
+    /// Very specific search operation - end point searching by both forename, and surname.
+    /// Way too specific - need to redesign.
+    /// </summary>
+    /// <param name="forename">First name of user - must be specified</param>
+    /// <param name="surname">Surname of user - also must be specified</param>
+    /// <returns>All users of that specific first name and surname</returns>
     [HttpGet("search")]
     public async Task<IActionResult> GetUsersByName([FromQuery] string forename, [FromQuery] string surname)
     {
@@ -63,6 +77,11 @@ public class UsersController : ControllerBase
         return Ok(dtos);
     }
 
+    /// <summary>
+    /// Gets the specific user with id `id`.
+    /// </summary>
+    /// <param name="id">The expected id of the user</param>
+    /// <returns>User with id passed, or if no such user exists - returns null</returns>
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetUsersById(long id)
     {
@@ -75,6 +94,11 @@ public class UsersController : ControllerBase
         return Ok(dto);
     }
 
+    /// <summary>
+    /// Create a new user via this endpoint
+    /// </summary>
+    /// <param name="createDto">Dto detailing parameters / attributes of this new user</param>
+    /// <returns>The user you just created - if created successfully</returns>
     [HttpPost]
     public async Task<IActionResult> AddUser([FromBody] UserCreateDto createDto)
     {
@@ -92,6 +116,12 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetUsersById), new { id = resultDto.Id }, resultDto);
     }
 
+    /// <summary>
+    /// Updates the user of id 'id' with a fully populated user dto, essentially replaces that user.
+    /// </summary>
+    /// <param name="id">Id of the user you wish to replace</param>
+    /// <param name="dto">Information of the user that you wish to put in place of the user of id `id`.</param>
+    /// <returns>If successful - returns the replaced user.</returns>
     [HttpPut("{id:long}")]
     public async Task<IActionResult> UpdateUserPut(long id, [FromBody] UserDto dto)
     {
@@ -111,6 +141,12 @@ public class UsersController : ControllerBase
         return Ok(updatedDto);
     }
 
+    /// <summary>
+    /// Update details user of id `id` for specific attributes using a patchDto
+    /// </summary>
+    /// <param name="id">Id of user you wish to update</param>
+    /// <param name="patchDto">Specific details of user that you wish to update, do not have to specify everything.</param>
+    /// <returns>If successful - returns user of same Id with attribute changed from that patchDto</returns>
     [HttpPatch("{id:long}")]
     public async Task<IActionResult> UpdateUserPatch(long id, [FromBody] UserPatchDto patchDto)
     {
@@ -136,6 +172,11 @@ public class UsersController : ControllerBase
         return Ok(resultDto);
     }
 
+    /// <summary>
+    /// Deletes the user of id `id`.
+    /// </summary>
+    /// <param name="id">`id` of the user you wish to delete</param>
+    /// <returns>Null - no user to return. 204 if successful</returns>
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteUser(long id)
     {

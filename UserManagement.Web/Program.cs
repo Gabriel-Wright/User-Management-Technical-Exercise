@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,8 +37,12 @@ namespace UserManagement.Web
 
                 //Adding Swagger so we can check Web APIs
                 builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen();
-
+                builder.Services.AddSwaggerGen(c =>
+                {
+                    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                    c.IncludeXmlComments(xmlPath);
+                });
                 var app = builder.Build();
 
                 app.UseMiddleware<ExceptionMiddlewareCatcher>();
