@@ -39,6 +39,7 @@ namespace UserManagement.Web
 
                 var app = builder.Build();
 
+                app.UseMiddleware<ExceptionMiddlewareCatcher>();
                 //DB check prod
                 if (!builder.Environment.IsDevelopment())
                 {

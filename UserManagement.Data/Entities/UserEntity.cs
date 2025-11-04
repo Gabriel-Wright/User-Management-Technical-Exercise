@@ -8,9 +8,9 @@ public class UserEntity
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public long Id { get; set; }
-    [Required, MaxLength(50)]
+    [Required, MaxLength(50), MinLength(2)]
     public string Forename { get; set; } = default!;
-    [Required, MaxLength(50)]
+    [Required, MaxLength(50), MinLength(2)]
     public string Surname { get; set; } = default!;
     [Required, MaxLength(100)]
     public string Email { get; set; } = default!;
