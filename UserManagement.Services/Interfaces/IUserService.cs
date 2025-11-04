@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using UserManagement.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace UserManagement.Services.Domain.Interfaces;
 
@@ -10,6 +11,12 @@ public interface IUserService
     /// </summary>
     /// <param name="isActive"></param>
     /// <returns></returns>
-    IEnumerable<UserEntity> FilterByActive(bool isActive);
-    IEnumerable<UserEntity> GetAll();
+    Task<IEnumerable<User>> FilterByActiveAsync(bool isActive);
+    Task<IEnumerable<User>> GetAllAsync();
+    Task<IEnumerable<User>> GetByNameAsync(String forename, String surname);
+    Task<User?> GetByIdAsync(long id);
+    Task<User> AddUserAsync(User user);
+    public Task<User> UpdateUserAsync(User user);
+    public Task DeleteUserAsync(long id);
+
 }

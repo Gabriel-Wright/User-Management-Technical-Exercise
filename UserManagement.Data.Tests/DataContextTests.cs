@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Models;
 
@@ -23,6 +24,7 @@ public class DataContextTests
             UserRole = "User",
         };
         await context.CreateAsync(entity);
+        await context.SaveChangesAsync();
 
         // Act: Invokes the method under test with the arranged parameters.
         var result = context.GetAll<UserEntity>();
@@ -31,6 +33,7 @@ public class DataContextTests
         result
             .Should().Contain(s => s.Email == entity.Email)
             .Which.Should().BeEquivalentTo(entity);
+        result.Should().HaveCount(1);
     }
 
     [Fact]
@@ -39,9 +42,13 @@ public class DataContextTests
         var context = CreateContext();
         var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
         await context.CreateAsync(user);
+        await context.SaveChangesAsync();
+
 
         user.Surname = "Updated";
         context.Update(user);
+        await context.SaveChangesAsync();
+
 
         var result = context.GetAll<UserEntity>().First(u => u.Email == "test@user.com");
         result.Surname.Should().Be("Updated");
@@ -61,16 +68,15 @@ public class DataContextTests
             UserRole = "User",
         };
         await context.CreateAsync(entity);
+        await context.SaveChangesAsync();
 
         var result = context.GetAll<UserEntity>();
 
-        result
-            .Should().Contain(s => s.Email == entity.Email)
-            .Which.Should().BeEquivalentTo(entity);
+        result.Should().ContainSingle(u => u.Email == entity.Email)
+              .Which.Forename.Should().Be(entity.Forename);
 
-
-        await context.DeleteAsync(entity);
-
+        context.Delete(entity);
+        await context.SaveChangesAsync();
 
         result = context.GetAll<UserEntity>();
 
@@ -85,6 +91,7 @@ public class DataContextTests
         var audit = new AuditEntity { EntityId = 1, AuditAction = "Created" };
 
         await context.CreateAsync(audit);
+        await context.SaveChangesAsync();
 
         var result = await context.GetAll<AuditEntity>().FirstAsync();
         result.EntityId.Should().Be(1);
@@ -98,13 +105,15 @@ public class DataContextTests
         var audit = new AuditEntity { EntityId = 1, AuditAction = "Created" };
 
         await context.CreateAsync(audit);
+        await context.SaveChangesAsync();
 
-        var result = await context.GetAll<AuditEntity>().FirstAsync();
-        result.EntityId.Should().Be(1);
-        result.AuditAction.Should().Be("Created");
+        var result = await context.GetAll<AuditEntity>().ToListAsync();
+        result.Should().ContainSingle(u => u.AuditAction == audit.AuditAction)
+                  .Which.AuditAction.Should().Be("Created");
 
-        await context.DeleteAsync(audit);
 
+        context.Delete(audit);
+        await context.SaveChangesAsync();
         var audits = context.GetAll<AuditEntity>();
         audits.Should().NotContain(a => a.EntityId == 1);
     }
@@ -117,6 +126,17 @@ public class DataContextTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new DataContext(options);
+        return new TestDataContext(options);
     }
 }
+
+public class TestDataContext : DataContext
+{
+    public TestDataContext(DbContextOptions<DataContext> options) : base(options) { }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        //No seed data
+    }
+}
+

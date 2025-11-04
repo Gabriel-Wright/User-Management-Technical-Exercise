@@ -51,21 +51,11 @@ public class DataContext : DbContext, IDataContext
         => base.Set<TEntity>();
 
     public async Task CreateAsync<TEntity>(TEntity entity) where TEntity : class
-    {
-        await AddAsync(entity);
-        await SaveChangesAsync();
-    }
+    => await AddAsync(entity);
+    public void UpdateE<TEntity>(TEntity entity) where TEntity : class
+        => Set<TEntity>().Update(entity);
 
-    public async Task UpdateAsync<TEntity>(TEntity entity) where TEntity : class
-    {
-        Update(entity);
-        await SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync<TEntity>(TEntity entity) where TEntity : class
-    {
-        Remove(entity);
-        await SaveChangesAsync();
-    }
-
+    public void Delete<TEntity>(TEntity entity) where TEntity : class
+        => Set<TEntity>().Remove(entity);
+    public async Task<int> SaveChangesAsync() => await base.SaveChangesAsync();
 }
