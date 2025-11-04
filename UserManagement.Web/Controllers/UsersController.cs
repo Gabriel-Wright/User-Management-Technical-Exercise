@@ -101,8 +101,7 @@ public class UsersController : ControllerBase
             return BadRequest("Invalid data used for put.");
         }
 
-        if (id != dto.Id)
-            return BadRequest("Mismatched IDs for update");
+        if (id != dto.Id) return BadRequest("Mismatched IDs for update");
 
         var userToUpdate = UserDtoMapper.ToUser(dto);
         var updatedUser = await _userService.UpdateUserAsync(userToUpdate);
@@ -115,14 +114,14 @@ public class UsersController : ControllerBase
     [HttpPatch("{id:long}")]
     public async Task<IActionResult> UpdateUserPatch(long id, [FromBody] UserPatchDto patchDto)
     {
+
+        if (patchDto == null) return BadRequest("Patch data is required.");
+
         if (!ModelState.IsValid)
         {
             Log.Warning("{@ModelState}", ModelState);
             return BadRequest("Invalid data used for Patch");
         }
-
-        if (patchDto == null)
-            return BadRequest("Patch data is required.");
 
         var existingUser = await _userService.GetByIdAsync(id);
         if (existingUser == null)
@@ -140,8 +139,7 @@ public class UsersController : ControllerBase
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteUser(long id)
     {
-        if (id <= 0)
-            return BadRequest("Invalid user ID.");
+        if (id <= 0) return BadRequest("Invalid user ID.");
 
         await _userService.DeleteUserAsync(id);
         await _userService.SaveAsync();
