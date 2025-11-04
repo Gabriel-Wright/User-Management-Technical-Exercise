@@ -1,3 +1,22 @@
+## Architectural Changes
+
+### UI Layer
+
+-   The application now separates UI and Web API responsibilities.
+-   The Web API (UserManagement.Web) hosts controllers and receives Dtos from the API layer.
+-   The UI (UserManagement.UI) is implemented as a Blazor WebAssembly client that communicates with the Web API over HTTP.
+
+### Dev Environment vs Production Environment
+
+This repo can be run in a Development Environment or production Environment, this is determined by the
+`ASPNETCORE_ENVIRONMENT` variable. Or alternatively, when running this project in VSCode or by dotnet run, the project will be run in dev mode - when running by a released build i.e. `dotnet publish` the release will use the production environment by default.
+
+### In Memory DB and Deployed MySQL DB
+
+Our Development Environment uses an in memory DB, whereas the Production Environment is expected to use a MySQL DB. The details to connect to this MySQL DB must be passed via environment variables that are detailed below.
+
+Below is specific detail explaining info needed on each of these changes:
+
 ## Environment Differences
 
 When running locally (either by visual studio code or by `dotnet run`), `ASPNETCORE_ENVIRONMENT=development`.
@@ -5,6 +24,30 @@ In this case console output includes verbose logs, while log files capture entri
 
 When running published release build e.g. from `dotnet publish ...`, `ASPNETCORE_ENVIRONMENT=production`.
 Only Information level logs and above are written to both the console and log files.
+
+#### UI Environment Variables
+
+The environment variables used to connect to the UI layer that depend on current environment of the program.
+
+Development: `UI_URL_DEV`  
+Production: `UI_URL_PROD`
+
+If the relevant environment variables are not set, the UI url is read from the AllowedUIOrigin in the environment-specific JSON file:
+
+`appsettings.Development.json`
+
+```
+  "AllowedUIOrigin": "http://localhost:5086"
+```
+
+OR
+`appsettings.Production.json`
+
+I have left these set to the default ports of a Blazor app - this wouldn't be done in standard professional practice, but for this exercise I felt it would be easier to with and to try out.
+
+### Cross-Origin Resource Sharing (CORS) between UI Layer and Web API layer
+
+The Web API is configured to allow requests from the UI origin.
 
 ## Database Setup
 

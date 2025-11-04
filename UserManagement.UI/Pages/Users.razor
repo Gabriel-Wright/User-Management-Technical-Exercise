@@ -1,0 +1,49 @@
+@page "/users"
+@using UserManagement.UI.Dtos
+@using UserManagement.UI.Services
+@inject UserApiService UserService
+
+@if (users == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!users.Any())
+{
+    <p>No users found.</p>
+}
+else
+{
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Forename</th>
+                <th>Surname</th>
+                <th>Email</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Forename</td>
+                    <td>@user.Surname</td>
+                    <td>@user.Email</td>
+                    <td>@user.IsActive</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserDto>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await UserService.GetAllAsync();
+    }
+}

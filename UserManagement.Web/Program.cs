@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -28,13 +29,20 @@ namespace UserManagement.Web
                 configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .Enrich.FromLogContext());
-
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowBlazorClient",
+                        policy => policy
+                            .WithOrigins(FindAllowedCorsOrigin(builder.Environment, builder.Configuration))
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                    );
+                });
                 //Add services to the container. - removing Views from this layer. Separate UI layer introduced.
                 builder.Services
                     .AddDataAccess(builder.Configuration, builder.Environment)
                     .AddDomainServices()
                         .AddControllers();
-
                 //Adding Swagger so we can check Web APIs
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(c =>
@@ -44,8 +52,9 @@ namespace UserManagement.Web
                     c.IncludeXmlComments(xmlPath);
                 });
                 var app = builder.Build();
-
+                app.UseCors("AllowBlazorClient");
                 app.UseMiddleware<ExceptionMiddlewareCatcher>();
+
                 //DB check prod
                 if (!builder.Environment.IsDevelopment())
                 {
@@ -103,5 +112,30 @@ namespace UserManagement.Web
             }
 
         }
+
+        private static string FindAllowedCorsOrigin(IHostEnvironment env, IConfiguration configuration)
+        {
+            //Check environment-specific env var
+            string? envVar = env.IsDevelopment()
+                ? Environment.GetEnvironmentVariable("UI_URL_DEV")
+                : Environment.GetEnvironmentVariable("UI_URL_PROD");
+
+            //Use env var if set, otherwise fallback to configuration
+            if (!string.IsNullOrWhiteSpace(envVar))
+            {
+                Log.Information("CORs origin allowed on {Origin}", envVar);
+                return envVar;
+            }
+
+            string? configValue = configuration.GetValue<string>("AllowedUIOrigin");
+            if (!string.IsNullOrWhiteSpace(configValue))
+            {
+                Log.Information("CORs origin allowed on {Origin}", configValue);
+                return configValue;
+            }
+            Log.Fatal("No CORS origin configured or defined");
+            throw new InvalidOperationException("No CORS origin configured for the current environment.");
+        }
     }
+
 }
