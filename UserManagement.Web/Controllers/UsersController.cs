@@ -142,7 +142,7 @@ public class UsersController : ControllerBase
         if (!ModelState.IsValid)
         {
             Log.Warning("{@ModelState}", ModelState);
-            return BadRequest("In valid data used for creation.");
+            return BadRequest("Invalid data used for creation.");
         }
 
         var user = UserToUserCreateDtoMapper.ToUser(createDto);

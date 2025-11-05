@@ -100,16 +100,20 @@ public class UserApiService
 
     public async Task<UserDto> CreateUserAsync(UserCreateDto userCreateDto)
     {
+        var response = await _httpClient.PostAsJsonAsync("users", userCreateDto);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.PostAsJsonAsync("users", userCreateDto);
-
-            response.EnsureSuccessStatusCode();
-
-            var createdUser = await response.Content.ReadFromJsonAsync<UserDto>()
-                ?? throw new Exception("Failed to create user");
-
-            return createdUser;
+            var errorText = await response.Content.ReadAsStringAsync();
+            throw new UserApiException(
+                $"Server returned {(int)response.StatusCode}: {errorText}",
+                (int)response.StatusCode);
         }
 
+        //Not sure how to handle this case in UI - but I think it's worth catching
+        var createdUser = await response.Content.ReadFromJsonAsync<UserDto>()
+            ?? throw new UserApiException("Server returned empty user object after creation.");
+
+        return createdUser;
     }
 }

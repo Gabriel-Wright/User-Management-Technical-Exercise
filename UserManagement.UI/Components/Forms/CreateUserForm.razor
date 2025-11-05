@@ -1,5 +1,6 @@
 @namespace UserManagement.UI.Components
 @using UserManagement.UI.Dtos
+@using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
 
 @if (IsVisible)
@@ -15,6 +16,10 @@
                     <EditForm Model="NewUser" OnValidSubmit="SaveChanges">
                         <DataAnnotationsValidator />
                         <ValidationSummary />
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@ErrorMessage</div>
+                        }
 
                         <div class="mb-3">
                             <label class="form-label">Forename</label>
@@ -54,7 +59,7 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Create</button>
+                            <button type="submit" class="btn btn-primary disabled=" @IsCreating"">Create</button>
                             <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
                         </div>
                     </EditForm>
@@ -74,8 +79,15 @@
     private string ErrorMessage = "";
     private UserCreateDto NewUser = new();
 
+    //Same as with Delete button - need to prevent button from being pressed again while craeting user.
+    private bool IsCreating = false;
+
     private async Task SaveChanges()
     {
+        if (IsCreating) return;
+        IsCreating = true;
+        ErrorMessage = "";
+
         try
         {
             var createdUser = await UserService.CreateUserAsync(NewUser);
@@ -85,12 +97,24 @@
 
             await Close();
         }
-        catch (Exception ex)
+        catch (UserApiException ex)
         {
-            ErrorMessage = ex.Message;
+            if (ex.StatusCode == 400)
+                ErrorMessage = "Invalid input. Please check your details.";
+            else if (ex.StatusCode == 409)
+                ErrorMessage = "A user with this email already exists.";
+            else
+                ErrorMessage = "Unexpected server error. Please try again later.";
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Network or internal error. Please try again.";
+        }
+        finally
+        {
+            IsCreating = false;
         }
     }
-
     private async Task Close()
     {
         ErrorMessage = "";
