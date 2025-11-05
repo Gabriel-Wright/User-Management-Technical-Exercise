@@ -17,6 +17,7 @@ else if (!users.Any())
 }
 else
 {
+    <button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
     <table class="table table-hover">
         <thead>
             <tr>
@@ -43,12 +44,18 @@ else
     OnDeleted="HandleUserDeleted" />
 <EditUserForm IsVisible="isEditUserFormVisible" User="selectedEditUser" OnClose="CloseEditModal"
     OnUpdated="HandleUserUpdated" />
+<CreateUserForm IsVisible="isCreateUserFormVisible" OnClose="CloseCreateUserModal" OnCreated="HandleUserCreated" />
+
 @code {
+    //Essentially whether modals are shown is triggered by buttons you click on. When their operations are complete,
+    //i.e. closed or Created or Updated... or Deleted -> call functions in this UI page to refresh / update view.
     private List<UserDto>? users;
 
     private bool isViewUserFormVisible = false;
     private bool isDeleteUserFormVisible = false;
-    private bool isEditUserFormVisible;
+    private bool isEditUserFormVisible = false;
+    private bool isCreateUserFormVisible = false;
+
 
     private UserDto? selectedViewUser;
     private UserDto? selectedDeleteUser;
@@ -104,5 +111,22 @@ else
         var index = users!.FindIndex(u => u.Id == updated.Id);
         if (index >= 0) users[index] = updated;
         CloseEditModal();
+    }
+
+    private void ShowCreateUserModal()
+    {
+        isCreateUserFormVisible = true;
+    }
+
+    private void CloseCreateUserModal()
+    {
+        isCreateUserFormVisible = false;
+    }
+
+    private void HandleUserCreated(UserDto newUser)
+    {
+        users ??= new List<UserDto>();
+        users.Add(newUser);
+        CloseCreateUserModal();
     }
 }

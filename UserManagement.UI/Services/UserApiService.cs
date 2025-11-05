@@ -27,4 +27,19 @@ public class UserApiService
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<UserDto>() ?? throw new Exception("Failed update user");
     }
+
+    public async Task<UserDto> CreateUserAsync(UserCreateDto userCreateDto)
+    {
+        {
+            var response = await _httpClient.PostAsJsonAsync("users", userCreateDto);
+
+            response.EnsureSuccessStatusCode();
+
+            var createdUser = await response.Content.ReadFromJsonAsync<UserDto>()
+                ?? throw new Exception("Failed to create user");
+
+            return createdUser;
+        }
+
+    }
 }
