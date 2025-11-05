@@ -80,8 +80,20 @@ public class UserApiService
     public async Task<UserDto> PatchUserAsync(long id, UserPatchDto patchDto)
     {
         var response = await _httpClient.PatchAsJsonAsync($"users/{id}", patchDto);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<UserDto>() ?? throw new Exception("Failed update user");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorText = await response.Content.ReadAsStringAsync();
+            throw new UserApiException(
+                $"Server returned {(int)response.StatusCode}: {errorText}",
+                (int)response.StatusCode);
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<UserDto>();
+        if (result == null)
+            throw new UserApiException("Server returned empty response.", 500);
+
+        return result;
     }
 
     public async Task<UserDto> CreateUserAsync(UserCreateDto userCreateDto)

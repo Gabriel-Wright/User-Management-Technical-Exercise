@@ -1,5 +1,6 @@
 @namespace UserManagement.UI.Components
 @using UserManagement.UI.Dtos
+@using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
 @if (IsVisible && User != null)
 {
@@ -15,7 +16,6 @@
                         <DataAnnotationsValidator />
                         @if (!string.IsNullOrEmpty(ErrorMessage))
                         {
-                            <div class="alert alert-danger">Unexpected Error Occurred.</div>
                             <div class="alert alert-danger">@ErrorMessage</div>
                         }
 
@@ -104,13 +104,20 @@
 
             await Close();
         }
-        catch (Exception ex)
+        catch (UserApiException ex)
         {
-            //Still not sure if setting error message and showing here is good.. will leave for now
-            ErrorMessage = ex.Message;
+            if (ex.StatusCode == 404)
+                ErrorMessage = "User no longer exists.";
+            else if (ex.StatusCode == 400)
+                ErrorMessage = "Invalid input, please check your data.";
+            else
+                ErrorMessage = "Unexpected server error. Please try again.";
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Unexpected error occurred. Please try again.";
         }
     }
-
     private async Task Close()
     {
         ErrorMessage = "";
