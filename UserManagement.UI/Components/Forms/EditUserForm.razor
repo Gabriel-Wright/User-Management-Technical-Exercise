@@ -1,0 +1,119 @@
+@namespace UserManagement.UI.Components
+@using UserManagement.UI.Dtos
+@using UserManagement.UI.Services
+@if (IsVisible && User != null)
+{
+    <div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="EditableUser" OnValidSubmit="SaveChanges">
+                        <DataAnnotationsValidator />
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger">Unexpected Error Occurred.</div>
+                            <div class="alert alert-danger">@ErrorMessage</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Forename</label>
+                            <InputText class="form-control" @bind-Value="EditableUser.Forename" />
+                            <ValidationMessage For="@(() => EditableUser.Forename)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Surname</label>
+                            <InputText class="form-control" @bind-Value="EditableUser.Surname" />
+                            <ValidationMessage For="@(() => EditableUser.Surname)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText class="form-control" @bind-Value="EditableUser.Email" />
+                            <ValidationMessage For="@(() => EditableUser.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" @bind="EditableUser.Role">
+                                <option value="0">User</option>
+                                <option value="1">Admin</option>
+                            </select>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="isActive" @bind="EditableUser.IsActive" />
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Birth Day</label>
+                            <input class="form-control" type="date" @bind="EditableUser.BirthDate" />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
+                        </div>
+
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public UserDto? User { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<UserDto> OnUpdated { get; set; }
+
+    [Inject] public UserApiService UserService { get; set; } = default!;
+
+    private string ErrorMessage = "";
+    private UserPatchDto EditableUser = new();
+
+    protected override void OnParametersSet()
+    {
+        if (User != null)
+        {
+            EditableUser = new UserPatchDto
+            {
+                Forename = User.Forename,
+                Surname = User.Surname,
+                Email = User.Email,
+                Role = User.Role,
+                IsActive = User.IsActive,
+                BirthDate = User.BirthDate
+            };
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        try
+        {
+            var updatedUser = await UserService.PatchUserAsync(User!.Id, EditableUser);
+
+            if (OnUpdated.HasDelegate)
+                await OnUpdated.InvokeAsync(updatedUser);
+
+            await Close();
+        }
+        catch (Exception ex)
+        {
+            //Still not sure if setting error message and showing here is good.. will leave for now
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task Close()
+    {
+        ErrorMessage = "";
+        await OnClose.InvokeAsync();
+    }
+}

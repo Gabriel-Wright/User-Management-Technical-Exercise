@@ -20,4 +20,11 @@ public class UserApiService
             throw new Exception($"Delete failed: {error}");
         }
     }
+
+    public async Task<UserDto> PatchUserAsync(long id, UserPatchDto patchDto)
+    {
+        var response = await _httpClient.PatchAsJsonAsync($"users/{id}", patchDto);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<UserDto>() ?? throw new Exception("Failed update user");
+    }
 }

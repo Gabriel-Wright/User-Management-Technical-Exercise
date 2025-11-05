@@ -32,7 +32,7 @@ else
         <tbody>
             @foreach (var user in users)
             {
-                <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" />
+                <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" OnEdit="ShowUserEditModal" />
             }
         </tbody>
     </table>
@@ -41,13 +41,19 @@ else
 <ViewUserForm IsVisible="isViewUserFormVisible" User="selectedViewUser" OnClose="CloseViewModal" />
 <DeleteUserForm IsVisible="isDeleteUserFormVisible" User="selectedDeleteUser" OnClose="CloseDeleteModal"
     OnDeleted="HandleUserDeleted" />
+<EditUserForm IsVisible="isEditUserFormVisible" User="selectedEditUser" OnClose="CloseEditModal"
+    OnUpdated="HandleUserUpdated" />
 @code {
     private List<UserDto>? users;
 
     private bool isViewUserFormVisible = false;
     private bool isDeleteUserFormVisible = false;
+    private bool isEditUserFormVisible;
+
     private UserDto? selectedViewUser;
     private UserDto? selectedDeleteUser;
+    private UserDto? selectedEditUser;
+
     protected override async Task OnInitializedAsync()
     {
         users = await UserService.GetAllAsync();
@@ -80,5 +86,23 @@ else
     {
         users!.RemoveAll(u => u.Id == deleted.Id);
         CloseDeleteModal();
+    }
+    private void ShowUserEditModal(UserDto user)
+    {
+        selectedEditUser = user;
+        isEditUserFormVisible = true;
+    }
+
+    private void CloseEditModal()
+    {
+        isEditUserFormVisible = false;
+        selectedEditUser = null;
+    }
+
+    private void HandleUserUpdated(UserDto updated)
+    {
+        var index = users!.FindIndex(u => u.Id == updated.Id);
+        if (index >= 0) users[index] = updated;
+        CloseEditModal();
     }
 }
