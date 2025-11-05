@@ -3,48 +3,52 @@
 <PageTitle>UMS List Users</PageTitle>
 
 @using UserManagement.UI.Dtos
+@using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
 @using UserManagement.UI.Components
 @inject UserApiService UserService
 
-@if (users == null || !users.Any())
+<UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
+    SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
+    OnSearch="HandleSearch" />
+<button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
+@switch (currentState)
 {
-    <UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
-        SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
-        OnSearch="HandleSearch" />
-    <button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
+    case UserListState.Loading:
+        <p>Loading users...</p>
+        break;
+    case UserListState.Error:
+        <div class="alert alert-danger">
+            @loadErrorMessage
+        </div>
+        break;
+    case UserListState.Empty:
+        <p>No users found.</p>
+        break;
+    case UserListState.Data:
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Forename</th>
+                    <th>Surname</th>
+                    <th>Email</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users!)
+                {
+                    <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" OnEdit="ShowUserEditModal" />
+                }
+            </tbody>
+        </table>
 
-    <p>No users found.</p>
+        <UserListPaginator CurrentPage="@currentPage" TotalPages="@TotalPages" SortField="@sortBy" Descending="@sortDescending"
+            OnPageChanged="HandlePageChanged" OnSortChanged="HandleSortChanged" />
+        break;
 }
-else
-{
-    <UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
-        SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
-        OnSearch="HandleSearch" />
-    <button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
-
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Forename</th>
-                <th>Surname</th>
-                <th>Email</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in users)
-            {
-                <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" OnEdit="ShowUserEditModal" />
-            }
-        </tbody>
-    </table>
-    <UserListPaginator CurrentPage="@currentPage" TotalPages="@TotalPages" SortField="@sortBy" Descending="@sortDescending"
-        OnPageChanged="HandlePageChanged" OnSortChanged="HandleSortChanged" />
-}
-
 <ViewUserForm IsVisible="currentForm == VisibleForm.ViewUser" User="selectedViewUser" OnClose="CloseViewModal" />
 <DeleteUserForm IsVisible="currentForm == VisibleForm.DeleteUser" User="selectedDeleteUser" OnClose="CloseDeleteModal"
     OnDeleted="HandleUserDeleted" />
@@ -54,8 +58,12 @@ else
     OnCreated="HandleUserCreated" />
 
 @code {
+    //State for how the List will be viewed
+    private enum UserListState { Loading, Error, Empty, Data }
+    private UserListState currentState = UserListState.Loading;
     private List<UserDto>? users;
-
+    //This is to handle the scenario where e.g. can't connect to DB - or some other issue.
+    private string? loadErrorMessage;
     private enum VisibleForm
     {
         None,
@@ -173,20 +181,48 @@ else
 
     private async Task LoadUsers()
     {
+        currentState = UserListState.Loading;
+        //Could handle this better
+        try
+        {
+            loadErrorMessage = null;
 
-        var result = await UserService.GetUsersByQueryAsync(
-        searchTerm: searchTerm,
-        isActive: GetIsActiveFilter(),
-        page: currentPage,
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortDescending: sortDescending
-        );
+            var result = await UserService.GetUsersByQueryAsync(
+            searchTerm: searchTerm,
+            isActive: GetIsActiveFilter(),
+            page: currentPage,
+            pageSize: pageSize,
+            sortBy: sortBy,
+            sortDescending: sortDescending
+            );
 
-        users = result.Users;
-        totalCount = result.TotalCount;
+            users = result.Users;
+            totalCount = result.TotalCount;
+            currentState = totalCount == 0 ? UserListState.Empty : UserListState.Data;
+        }
+        catch (UserApiException ex)
+        {
+            loadErrorMessage = ex.Message;
+
+            Console.Error.WriteLine($"API Error: {ex.Message}");
+            if (ex.InnerException != null)
+                Console.Error.WriteLine(ex.InnerException);
+
+            users = new List<UserDto>();
+            totalCount = 0;
+            currentState = UserListState.Error;
+        }
+        catch (Exception ex)
+        {
+            loadErrorMessage = "Unexpected Internal Error when fetching users.";
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+            Console.Error.WriteLine(ex.StackTrace);
+
+            users = new List<UserDto>();
+            totalCount = 0;
+            currentState = UserListState.Error;
+        }
     }
-
     private bool? GetIsActiveFilter()
     {
         return selectedActiveOption switch

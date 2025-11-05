@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.WebUtilities;
 using UserManagement.UI.Dtos;
+using UserManagement.UI.Exceptions;
 
 namespace UserManagement.UI.Services;
 
@@ -19,23 +21,29 @@ public class UserApiService
         string sortBy = "id",
         bool sortDescending = false)
     {
-        var query = new List<string>
+        var queryParams = new Dictionary<string, string?>
         {
-            $"page={page}",
-            $"pageSize={pageSize}",
-            $"sortBy={sortBy}",
-            $"sortDescending={sortDescending.ToString().ToLower()}"
+            ["page"] = page.ToString(),
+            ["pageSize"] = pageSize.ToString(),
+            ["sortBy"] = sortBy,
+            ["sortDescending"] = sortDescending.ToString().ToLower(),
+            ["searchTerm"] = string.IsNullOrWhiteSpace(searchTerm) ? null : searchTerm,
+            ["isActive"] = isActive?.ToString().ToLower()
         };
 
-        if (!string.IsNullOrWhiteSpace(searchTerm)) query.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
-
-        if (isActive.HasValue) query.Add($"isActive={isActive.Value.ToString().ToLower()}");
-
-        var url = $"users/query?{string.Join("&", query)}";
+        var url = QueryHelpers.AddQueryString("users/query", queryParams);
 
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<PagedResult<UserDto>>(url);
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                throw new UserApiException($"Server returned {(int)response.StatusCode}: {errorText}", (int)response.StatusCode);
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<PagedResult<UserDto>>();
 
             if (result == null)
                 return (new List<UserDto>(), 0);
@@ -44,8 +52,18 @@ public class UserApiService
         }
         catch (HttpRequestException ex)
         {
-            Console.WriteLine($"Error fetching users: {ex.Message}");
-            return (new List<UserDto>(), 0);
+            Console.Error.WriteLine($"Network error fetching users from {url}: {ex.Message}");
+            throw new UserApiException("Network error: unable to reach the server.", inner: ex);
+        }
+        catch (NotSupportedException ex)
+        {
+            Console.Error.WriteLine($"Unsupported response fetching users from {url}: {ex.Message}");
+            throw new UserApiException("Server returned an unsupported response format.", inner: ex);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            Console.Error.WriteLine($"Malformed JSON response from {url}: {ex.Message}");
+            throw new UserApiException("Server returned an unsupported response format.", inner: ex);
         }
     }
 

@@ -64,8 +64,6 @@ public class UsersController : ControllerBase
         };
         var (users, totalCount) = await _userService.GetUsersAsync(query);
 
-        if (!users.Any()) return NotFound("No users found for the specified query.");
-
         var result = new PagedResult<UserDto>
         {
             Items = users.Select(UserDtoMapper.ToDto).ToList(),
