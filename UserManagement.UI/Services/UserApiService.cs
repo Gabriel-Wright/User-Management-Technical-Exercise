@@ -11,6 +11,36 @@ public class UserApiService
         return await _httpClient.GetFromJsonAsync<List<UserDto>>("users") ?? new List<UserDto>();
     }
 
+    public async Task<(List<UserDto> Users, int TotalCount)> GetUsersByQueryAsync(
+        string? searchTerm = null,
+        bool? isActive = null,
+        int page = 1,
+        int pageSize = 10,
+        string sortBy = "id",
+        bool sortDescending = false)
+    {
+        var query = new List<string>
+        {
+            $"page={page}",
+            $"pageSize={pageSize}",
+            $"sortBy={sortBy}",
+            $"sortDescending={sortDescending.ToString().ToLower()}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(searchTerm)) query.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+
+        if (isActive.HasValue) query.Add($"isActive={isActive.Value.ToString().ToLower()}");
+
+        var url = $"users/query?{string.Join("&", query)}";
+
+        var response = await _httpClient.GetAsync(url);
+        //Not sure about this - need to have a think
+        if (!response.IsSuccessStatusCode) return (new List<UserDto>(), 0);
+
+        var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
+        return (users ?? new List<UserDto>(), users?.Count ?? 0);
+    }
+
     public async Task DeleteUserAsync(long userId)
     {
         var response = await _httpClient.DeleteAsync($"users/{userId}");

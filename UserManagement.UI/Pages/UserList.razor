@@ -7,17 +7,26 @@
 @using UserManagement.UI.Components
 @inject UserApiService UserService
 
-@if (users == null)
+@if (isLoading)
 {
     <p><em>Loading...</em></p>
 }
-else if (!users.Any())
+else if (users == null || !users.Any())
 {
+    <UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
+        SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
+        OnSearch="HandleSearch" />
+    <button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
+
     <p>No users found.</p>
 }
 else
 {
+    <UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
+        SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
+        OnSearch="HandleSearch" />
     <button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
+
     <table class="table table-hover">
         <thead>
             <tr>
@@ -29,7 +38,6 @@ else
                 <th>Actions</th>
             </tr>
         </thead>
-
         <tbody>
             @foreach (var user in users)
             {
@@ -47,25 +55,63 @@ else
 <CreateUserForm IsVisible="isCreateUserFormVisible" OnClose="CloseCreateUserModal" OnCreated="HandleUserCreated" />
 
 @code {
-    //Essentially whether modals are shown is triggered by buttons you click on. When their operations are complete,
-    //i.e. closed or Created or Updated... or Deleted -> call functions in this UI page to refresh / update view.
     private List<UserDto>? users;
 
-    private bool isViewUserFormVisible = false;
-    private bool isDeleteUserFormVisible = false;
-    private bool isEditUserFormVisible = false;
-    private bool isCreateUserFormVisible = false;
+    private bool isLoading = true;
 
+    private bool isViewUserFormVisible;
+    private bool isDeleteUserFormVisible;
+    private bool isEditUserFormVisible;
+    private bool isCreateUserFormVisible;
 
     private UserDto? selectedViewUser;
     private UserDto? selectedDeleteUser;
     private UserDto? selectedEditUser;
 
+    //Search and pagination
+    private string searchTerm = "";
+    private string selectedActiveOption = "";
+    private int currentPage = 1;
+    private int totalCount = 0;
+    private string sortBy = "id";
+    private bool sortDescending = false;
+
     protected override async Task OnInitializedAsync()
     {
-        users = await UserService.GetAllAsync();
+        await LoadUsers();
     }
 
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        var result = await UserService.GetUsersByQueryAsync(page: currentPage, pageSize: 10);
+        users = result.Users;
+        totalCount = result.TotalCount;
+        isLoading = false;
+    }
+
+    private async Task HandleSearch((string? searchTerm, bool? isActive) args)
+    {
+        searchTerm = args.searchTerm ?? "";
+        selectedActiveOption = args.isActive switch
+        {
+            true => "true",
+            false => "false",
+            null => ""
+        };
+
+        var result = await UserService.GetUsersByQueryAsync(
+        searchTerm: searchTerm,
+        isActive: args.isActive,
+        page: currentPage,
+        pageSize: 10,
+        sortBy: sortBy,
+        sortDescending: sortDescending
+        );
+
+        users = result.Users;
+        totalCount = result.TotalCount;
+    }
     private void ShowUserViewModal(UserDto user)
     {
         selectedViewUser = user;
@@ -89,11 +135,13 @@ else
         isDeleteUserFormVisible = false;
         selectedDeleteUser = null;
     }
+
     private void HandleUserDeleted(UserDto deleted)
     {
         users!.RemoveAll(u => u.Id == deleted.Id);
         CloseDeleteModal();
     }
+
     private void ShowUserEditModal(UserDto user)
     {
         selectedEditUser = user;

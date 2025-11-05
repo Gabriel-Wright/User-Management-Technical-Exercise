@@ -1,0 +1,39 @@
+<div class="d-flex mb-3 gap-2 align-items-center">
+    <input type="text" class="form-control w-25" placeholder="Search users..." @bind="SearchTerm" />
+
+    <select class="form-select w-auto ms-3" @bind="SelectedActiveOption">
+        <option value="">All</option>
+        <option value="true">Active</option>
+        <option value="false">Inactive</option>
+    </select>
+
+    <button class="btn btn-primary ms-2" @onclick="OnSearchClicked">Search</button>
+</div>
+
+@code {
+    [Parameter] public string? SearchTerm { get; set; }
+    //called if search term changed
+    [Parameter] public EventCallback<string?> SearchTermChanged { get; set; }
+
+    [Parameter] public string SelectedActiveOption { get; set; } = "";
+    //called if active option changes
+    [Parameter] public EventCallback<string> SelectedActiveOptionChanged { get; set; }
+
+    //Purpose of above callbacks is to ensure that UserSearchBar options are linked to same SearchTerm and ActiveOptions
+    //stored in UserList
+    [Parameter] public EventCallback<(string? searchTerm, bool? isActive)> OnSearch { get; set; }
+
+    private async Task OnSearchClicked()
+    {
+        //Easier to have dropdown options as strings which get converted over
+        //Could make separate object for this - but since small app ok for now
+        bool? isActive = SelectedActiveOption switch
+        {
+            "true" => true,
+            "false" => false,
+            _ => null
+        };
+
+        await OnSearch.InvokeAsync((SearchTerm, isActive));
+    }
+}
