@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Serilog;
 using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Interfaces;
+using UserManagement.Web;
 using UserManagement.Web.Dtos;
 
 namespace UserManagement.WebMS.Controllers;
@@ -65,8 +66,16 @@ public class UsersController : ControllerBase
 
         if (!users.Any()) return NotFound("No users found for the specified query.");
 
+        var result = new PagedResult<UserDto>
+        {
+            Items = users.Select(UserDtoMapper.ToDto).ToList(),
+            TotalCount = totalCount,
+            PageNumber = query.Page,
+            PageSize = query.PageSize
+        };
+
         var dtos = users.Select(UserDtoMapper.ToDto);
-        return Ok(dtos);
+        return Ok(result);
     }
 
 

@@ -33,12 +33,20 @@ public class UserApiService
 
         var url = $"users/query?{string.Join("&", query)}";
 
-        var response = await _httpClient.GetAsync(url);
-        //Not sure about this - need to have a think
-        if (!response.IsSuccessStatusCode) return (new List<UserDto>(), 0);
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<PagedResult<UserDto>>(url);
 
-        var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
-        return (users ?? new List<UserDto>(), users?.Count ?? 0);
+            if (result == null)
+                return (new List<UserDto>(), 0);
+
+            return (result.Items, result.TotalCount);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error fetching users: {ex.Message}");
+            return (new List<UserDto>(), 0);
+        }
     }
 
     public async Task DeleteUserAsync(long userId)
