@@ -6,7 +6,7 @@
 @using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
 @using UserManagement.UI.Components
-@inject UserApiService UserService
+@inject IUserApiService UserService
 
 <UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
     SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"

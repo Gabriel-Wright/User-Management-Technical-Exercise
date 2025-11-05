@@ -5,7 +5,7 @@ using UserManagement.UI.Exceptions;
 
 namespace UserManagement.UI.Services;
 
-public class UserApiService
+public class UserApiService : IUserApiService
 {
     private readonly HttpClient _httpClient; public UserApiService(HttpClient http) { _httpClient = http; }
 

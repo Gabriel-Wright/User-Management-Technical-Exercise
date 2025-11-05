@@ -76,8 +76,7 @@ these forms apply that -> But I felt the extraarchitecture was a bit unncessary 
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<UserDto> OnCreated { get; set; }
 
-    [Inject] public UserApiService UserService { get; set; } = default!;
-
+    [Inject] public IUserApiService UserService { get; set; } = default!;
     private DateTime MinBirthDate => DateTime.Today.AddYears(-120);
     private DateTime MaxBirthDate => DateTime.Today.AddYears(-18);
     private string ErrorMessage = "";
