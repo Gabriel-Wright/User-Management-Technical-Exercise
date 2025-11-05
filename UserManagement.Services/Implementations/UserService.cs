@@ -33,6 +33,48 @@ public class UserService : IUserService
         return userEntities.Select(UserMapper.ToDomainUser);
     }
 
+    //Getting all users but passing a query down
+    public async Task<(IEnumerable<User> Users, int TotalCount)> GetUsersAsync(UserQuery query)
+    {
+        ValidateQuery(query);
+        var usersQuery = _dataAccess.GetAll<UserEntity>().AsQueryable();
+
+        //Filter by IsActive
+        if (query.IsActive.HasValue)
+            usersQuery = usersQuery.Where(u => u.IsActive == query.IsActive.Value);
+
+        //Search across forename surname email
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var term = query.SearchTerm.Trim().ToLower();
+            usersQuery = usersQuery.Where(u =>
+                u.Forename.ToLower().Contains(term) ||
+                u.Surname.ToLower().Contains(term) ||
+                u.Email.ToLower().Contains(term));
+        }
+
+        //Total count before paging - needed for paging
+        var totalCount = await usersQuery.CountAsync();
+
+        //Sorting
+        usersQuery = query.SortBy.ToLower() switch
+        {
+            "forename" => query.SortDescending ? usersQuery.OrderByDescending(u => u.Forename) : usersQuery.OrderBy(u => u.Forename),
+            "surname" => query.SortDescending ? usersQuery.OrderByDescending(u => u.Surname) : usersQuery.OrderBy(u => u.Surname),
+            "email" => query.SortDescending ? usersQuery.OrderByDescending(u => u.Email) : usersQuery.OrderBy(u => u.Email),
+            _ => query.SortDescending ? usersQuery.OrderByDescending(u => u.Id) : usersQuery.OrderBy(u => u.Id)
+        };
+
+        //Actually returning the list of userEntities
+        var usersPage = await usersQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync();
+
+        //Returning mapped over userentities -> DomainUser
+        return (usersPage.Select(UserMapper.ToDomainUser), totalCount);
+    }
+
     public async Task<IEnumerable<User>> FilterByActiveAsync(bool isActive)
     {
         Log.Debug("Fetching all Users from DB that are {Active}.", isActive);
@@ -157,6 +199,14 @@ public class UserService : IUserService
             var errors = string.Join("; ", results.Select(r => r.ErrorMessage));
             throw new ValidationException(errors);
         }
+    }
+
+    private void ValidateQuery(UserQuery query)
+    {
+        if (query.Page < 1) query.Page = 1;
+        if (query.PageSize <= 0) query.PageSize = 10;
+        if (query.PageSize > 20) query.PageSize = 20; //enforcing a maximum here
+        if (string.IsNullOrWhiteSpace(query.SortBy)) query.SortBy = "Id";
     }
 }
 

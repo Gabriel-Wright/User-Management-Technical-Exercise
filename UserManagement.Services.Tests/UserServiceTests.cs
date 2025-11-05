@@ -40,6 +40,101 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task GetUsersAsync_NoMatches_ShouldReturnEmptyList()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery { SearchTerm = "nonexistent" };
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        totalCount.Should().Be(0);
+        users.Should().BeEmpty();
+    }
+    [Fact]
+    public async Task GetUsersAsync_FilterSearchByTerm_ShouldFindResults()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery
+        {
+            SearchTerm = "gryffindor",
+            SortDescending = true,
+        };
+
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        totalCount.Should().Be(3); //3 total users and not separating by page
+        users.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_FilterSearchByTermAndActive_ShouldFindOneResults()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery
+        {
+            IsActive = false,
+            SearchTerm = "gryffindor",
+            SortDescending = true,
+        };
+
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        totalCount.Should().Be(1); //3 total users and not separating by page
+        users.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_Sorting_ShouldReturnUsersInCorrectSurnameDescOrder()
+    {
+        //For reference: If sorted by Surname Desc order
+        //Ronald WEASLEY <- First
+        //Lord Voldemort
+        //Harry Potter
+        //Hagrid IDK
+        //Hermione Granger <- Last
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery { SortBy = "Surname", SortDescending = true };
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        users.First().Forename.Should().Be("Ron");
+        users.Last().Forename.Should().Be("Hermione");
+
+    }
+    [Fact]
+    public async Task GetUsersAsync_InvalidPageOrPageSize_ShouldUseDefaults()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery { Page = -1, PageSize = 0 };
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        totalCount.Should().Be(5);
+        users.Should().HaveCount(5); // default pageSize = 10, so all 5 returned
+    }
+    [Fact]
     public async Task GetAllAsync_WhenNoUsers_ShouldReturnEmptyList()
     {
         var context = CreateContext();
@@ -47,6 +142,51 @@ public class UserServiceTests
         var result = await service.GetAllAsync();
 
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithSmallPage_ShouldReturnTwoUsers()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery
+        {
+            Page = 1,
+            PageSize = 2
+        };
+
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        totalCount.Should().Be(5); // 5 total users but only 2 in the page
+        users.Should().HaveCount(2);
+        users.Should().Contain(u => u.Email == "gryffindorOne@gmail.com");
+        users.Should().Contain(u => u.Email == "gryffindorTwo@yahoo.com");
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithSmallPageThirdPage_ShouldReturnOneUsers()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddFiveTestUsers(context);
+        await service.SaveAsync();
+
+        var query = new UserQuery
+        {
+            Page = 3,
+            PageSize = 2
+        };
+
+        var (users, totalCount) = await service.GetUsersAsync(query);
+
+        totalCount.Should().Be(5); // 5 total users but only 2 in the page
+        users.Should().HaveCount(1);
+        users.Should().Contain(u => u.Email == "groundskeeper@currys.com");
     }
 
     [Fact]
@@ -400,6 +540,49 @@ public class UserServiceTests
             Forename = "Mrs",
             Surname = "Tickle",
             Email = "tickle@yahoo.com",
+            IsActive = false
+        });
+    }
+
+    private static async Task AddFiveTestUsers(DataContext context)
+    {
+        await context.CreateAsync(new UserEntity
+        {
+            Forename = "Harry",
+            Surname = "Potter",
+            Email = "gryffindorOne@gmail.com",
+            IsActive = true
+        });
+
+        await context.CreateAsync(new UserEntity
+        {
+            Forename = "Ron",
+            Surname = "Weasley",
+            Email = "gryffindorTwo@yahoo.com",
+            IsActive = false
+        });
+
+        await context.CreateAsync(new UserEntity
+        {
+            Forename = "Hermione",
+            Surname = "Granger",
+            Email = "gryffindorThree@aol.com",
+            IsActive = true
+        });
+
+        await context.CreateAsync(new UserEntity
+        {
+            Forename = "Lord",
+            Surname = "Voldemort",
+            Email = "slytherine@askjeeves.com",
+            IsActive = false
+        });
+
+        await context.CreateAsync(new UserEntity
+        {
+            Forename = "Hagrid",
+            Surname = "Idk",
+            Email = "groundskeeper@currys.com",
             IsActive = false
         });
     }
