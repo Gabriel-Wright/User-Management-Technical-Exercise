@@ -148,7 +148,88 @@ public class UserControllerTests
         _mockService.Verify(s => s.GetByNameAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task GetUsersByQuery_WhenUsersExist_ReturnsOkWithUsers()
+    {
+        var queryDto = new UserQueryDto
+        {
+            Page = 1,
+            PageSize = 2,
+            SortBy = "Forename",
+            SortDescending = false,
+            IsActive = true,
+            SearchTerm = "John"
+        };
 
+        var users = new List<User>
+    {
+        new() { Id = 1, Forename = "John", Surname = "Doe", Email = "john@example.com", IsActive = true }
+    };
+
+        _mockService.Setup(s => s.GetUsersAsync(It.IsAny<UserQuery>()))
+            .ReturnsAsync((users, users.Count));
+
+        var result = await _controller.GetUsersByQuery(queryDto);
+
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        var dtos = okResult.Value as IEnumerable<UserDto>;
+        dtos.Should().HaveCount(1);
+        dtos!.First().Forename.Should().Be("John");
+
+        _mockService.Verify(s => s.GetUsersAsync(It.Is<UserQuery>(q =>
+            q.Page == queryDto.Page &&
+            q.PageSize == queryDto.PageSize &&
+            q.SortBy == queryDto.SortBy &&
+            q.SortDescending == queryDto.SortDescending &&
+            q.IsActive == queryDto.IsActive &&
+            q.SearchTerm == queryDto.SearchTerm
+        )), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUsersByQuery_WhenNoUsersFound_ReturnsNotFound()
+    {
+        var queryDto = new UserQueryDto
+        {
+            Page = 1,
+            PageSize = 5,
+        };
+
+        _mockService.Setup(s => s.GetUsersAsync(It.IsAny<UserQuery>()))
+            .ReturnsAsync((new List<User>(), 0));
+
+        var result = await _controller.GetUsersByQuery(queryDto);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetUsersByQuery_WhenSortByIsNull_DefaultsToId()
+    {
+        var queryDto = new UserQueryDto
+        {
+            Page = 1,
+            PageSize = 10,
+            SortBy = null
+        };
+
+        var users = new List<User>
+    {
+        new() { Id = 1, Forename = "Alice", Surname = "Smith", Email = "alice@example.com" }
+    };
+
+        _mockService.Setup(s => s.GetUsersAsync(It.IsAny<UserQuery>()))
+            .ReturnsAsync((users, users.Count));
+
+        var result = await _controller.GetUsersByQuery(queryDto);
+
+        _mockService.Verify(s => s.GetUsersAsync(It.Is<UserQuery>(q => q.SortBy == "Id")), Times.Once);
+
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        var dtos = okResult.Value as IEnumerable<UserDto>;
+        dtos.Should().HaveCount(1);
+        dtos!.First().Forename.Should().Be("Alice");
+    }
 
     public async Task AddUser_ValidDto_ReturnsCreatedAtAction()
     {

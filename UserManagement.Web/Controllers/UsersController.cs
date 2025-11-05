@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Serilog;
+using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web.Dtos;
 
@@ -39,6 +40,35 @@ public class UsersController : ControllerBase
         var dtos = users.Select(u => UserDtoMapper.ToDto(u));
         return Ok(dtos);
     }
+
+    /// <summary>
+    /// Get All users that match query passed to it. I.E can search for specific keywords,
+    /// whether a user is active here -> also sort how large you want the query to be, how many 
+    /// and it what order you want the users returned.
+    /// </summary>
+    /// <param name="queryDto"></param>
+    /// <returns></returns>
+    [HttpGet("query")]
+    public async Task<IActionResult> GetUsersByQuery([FromQuery] UserQueryDto queryDto)
+    {
+        // Map DTO to domain query
+        var query = new UserQuery
+        {
+            Page = queryDto.Page,
+            PageSize = queryDto.PageSize,
+            SortBy = queryDto.SortBy ?? "Id",
+            SortDescending = queryDto.SortDescending,
+            IsActive = queryDto.IsActive,
+            SearchTerm = queryDto.SearchTerm
+        };
+        var (users, totalCount) = await _userService.GetUsersAsync(query);
+
+        if (!users.Any()) return NotFound("No users found for the specified query.");
+
+        var dtos = users.Select(UserDtoMapper.ToDto);
+        return Ok(dtos);
+    }
+
 
     /// <summary>
     /// Gets all users that are either active or not active

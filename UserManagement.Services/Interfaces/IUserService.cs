@@ -13,6 +13,7 @@ public interface IUserService
     /// <returns></returns>
     Task<IEnumerable<User>> FilterByActiveAsync(bool isActive);
     Task<IEnumerable<User>> GetAllAsync();
+    Task<(IEnumerable<User> Users, int TotalCount)> GetUsersAsync(UserQuery query);
     Task<IEnumerable<User>> GetByNameAsync(String forename, String surname);
     Task<User?> GetByIdAsync(long id);
     Task<User> AddUserAsync(User user);
