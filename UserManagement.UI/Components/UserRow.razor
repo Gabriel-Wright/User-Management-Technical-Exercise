@@ -1,0 +1,21 @@
+@using UserManagement.UI.Dtos
+
+<tr>
+    <td>@User.Id</td>
+    <td>@User.Forename</td>
+    <td>@User.Surname</td>
+    <td>@User.Email</td>
+    <td>@User.IsActive</td>
+    <td>
+        <button class="btn btn-sm btn-primary" @onclick="() => OnView.InvokeAsync(User)">View</button>
+        <button class="btn btn-sm btn-warning" @onclick="() => OnEdit.InvokeAsync(User)">Edit</button>
+        <button class="btn btn-sm btn-danger" @onclick="() => OnDelete.InvokeAsync(User)">Delete</button>
+    </td>
+</tr>
+
+@code {
+    [Parameter] public UserDto User { get; set; } = default!;
+    [Parameter] public EventCallback<UserDto> OnView { get; set; }
+    [Parameter] public EventCallback<UserDto> OnEdit { get; set; }
+    [Parameter] public EventCallback<UserDto> OnDelete { get; set; }
+}

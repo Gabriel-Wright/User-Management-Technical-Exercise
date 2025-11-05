@@ -2,6 +2,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    font-family: sans-serif;
+
 }
 
 main {
@@ -73,5 +75,17 @@ main {
     .top-row, article {
         padding-left: 2rem !important;
         padding-right: 1.5rem !important;
+    }
+
+    .top-row-left {
+    justify-content: center;
+    }
+
+    #header-link {
+        color:blue;
+    }
+
+    #header-link :active {
+        color: red;
     }
 }
