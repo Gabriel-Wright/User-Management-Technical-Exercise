@@ -500,6 +500,49 @@ public class UserServiceTests
             .WithMessage("*not found*");
     }
 
+    [Fact]
+    public async Task SoftDeleteUserAsync_WhenUserExists_ShouldMarkDeletedAndHideFromQueries()
+    {
+        // Arrange
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddTestUsers(context);
+        await service.SaveAsync();
+
+        //Get test users
+        var user = (await service.GetAllAsync()).First();
+
+        //Soft delete them
+        await service.SoftDeleteUserAsync(user.Id);
+        await service.SaveAsync();
+
+        //User can't be found
+        var users = await service.GetAllAsync();
+        users.Should().NotContain(u => u.Id == user.Id);
+
+        //Think this is the best way to test it?
+        var entityInDb = await context.Users!.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == user.Id);
+        entityInDb.Should().NotBeNull();
+        entityInDb!.Deleted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SoftDeleteUserAsync_WhenUserDoesNotExist_ShouldThrowKeyNotFoundException()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        await AddTestUsers(context);
+        await service.SaveAsync();
+
+        Func<Task> act = async () => await service.SoftDeleteUserAsync(999);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("*not found*");
+    }
+
     ///   ====================
     ///   TEST SETUP FUNCTIONS
     ///   ====================
@@ -521,6 +564,9 @@ public class UserServiceTests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            //Filter still applied
+            modelBuilder.Entity<UserEntity>().HasQueryFilter(u => !u.Deleted);
+
             //No seed data
         }
     }

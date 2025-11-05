@@ -225,4 +225,20 @@ public class UsersController : ControllerBase
         return NoContent(); //204 is standard successful DELETE - no body returned
     }
 
+    /// <summary>
+    /// Soft deletes the user of id `id`. This means the user won't appear in any queries,
+    /// but is not removed from the database.
+    /// </summary>
+    /// <param name="id">`id` of user you wish to soft delete</param>
+    /// <returns>Null - no user to return. 204 if successful</returns>
+    [HttpDelete("soft/{id:long}")]
+    public async Task<IActionResult> SoftDeleteUser(long id)
+    {
+        if (id <= 0) return BadRequest("Invalid user ID.");
+
+        await _userService.SoftDeleteUserAsync(id);
+        await _userService.SaveAsync();
+
+        return NoContent();
+    }
 }

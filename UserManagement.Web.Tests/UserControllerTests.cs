@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Interfaces;
+using UserManagement.Web;
 using UserManagement.Web.Dtos;
 using UserManagement.WebMS.Controllers;
 
@@ -172,9 +173,10 @@ public class UserControllerTests
         var result = await _controller.GetUsersByQuery(queryDto);
 
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var dtos = okResult.Value as IEnumerable<UserDto>;
-        dtos.Should().HaveCount(1);
-        dtos!.First().Forename.Should().Be("John");
+        var pagedResult = okResult.Value as PagedResult<UserDto>;
+        pagedResult.Should().NotBeNull();
+        pagedResult!.Items.Should().HaveCount(1);
+        pagedResult.Items.First().Forename.Should().Be("John");
 
         _mockService.Verify(s => s.GetUsersAsync(It.Is<UserQuery>(q =>
             q.Page == queryDto.Page &&
@@ -200,7 +202,11 @@ public class UserControllerTests
 
         var result = await _controller.GetUsersByQuery(queryDto);
 
-        result.Should().BeOfType<NotFoundObjectResult>();
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        var pagedResult = okResult.Value as PagedResult<UserDto>;
+        pagedResult.Should().NotBeNull();
+        pagedResult!.Items.Should().BeEmpty();
+        pagedResult.TotalCount.Should().Be(0);
     }
 
     [Fact]
@@ -226,9 +232,10 @@ public class UserControllerTests
         _mockService.Verify(s => s.GetUsersAsync(It.Is<UserQuery>(q => q.SortBy == "Id")), Times.Once);
 
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var dtos = okResult.Value as IEnumerable<UserDto>;
-        dtos.Should().HaveCount(1);
-        dtos!.First().Forename.Should().Be("Alice");
+        var pagedResult = okResult.Value as PagedResult<UserDto>;
+        pagedResult.Should().NotBeNull();
+        pagedResult!.Items.Should().HaveCount(1);
+        pagedResult.Items.First().Forename.Should().Be("Alice");
     }
 
     public async Task AddUser_ValidDto_ReturnsCreatedAtAction()
@@ -457,4 +464,42 @@ public class UserControllerTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
+
+    [Fact]
+    public async Task SoftDeleteUser_WhenUserExists_ReturnsNoContent()
+    {
+        _mockService.Setup(s => s.SoftDeleteUserAsync(1)).Returns(Task.CompletedTask);
+
+        var result = await _controller.SoftDeleteUser(1);
+
+        result.Should().BeOfType<NoContentResult>();
+        _mockService.Verify(s => s.SoftDeleteUserAsync(1), Times.Once);
+        _mockService.Verify(s => s.SaveAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task SoftDeleteUser_WhenIdInvalid_ReturnsBadRequest()
+    {
+        var result = await _controller.SoftDeleteUser(0);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        _mockService.Verify(s => s.SoftDeleteUserAsync(It.IsAny<long>()), Times.Never);
+        _mockService.Verify(s => s.SaveAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task SoftDeleteUser_WhenUserNotFound_ThrowsKeyNotFoundException()
+    {
+        _mockService.Setup(s => s.SoftDeleteUserAsync(666))
+            .ThrowsAsync(new KeyNotFoundException("User not found"));
+
+        Func<Task> act = async () => await _controller.SoftDeleteUser(666);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("User not found");
+
+        _mockService.Verify(s => s.SoftDeleteUserAsync(666), Times.Once);//reaches services but cant find user
+        _mockService.Verify(s => s.SaveAsync(), Times.Never);
+    }
+
 }

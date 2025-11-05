@@ -18,5 +18,5 @@ public class UserEntity
     public bool IsActive { get; set; }
     public DateTime BirthDate { get; set; }
     // //have this set as a bool
-    // public bool deleted { get; set; } = false;
+    public bool Deleted { get; set; } = false;
 }

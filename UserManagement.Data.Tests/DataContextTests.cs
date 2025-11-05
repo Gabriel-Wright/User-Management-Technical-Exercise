@@ -118,6 +118,38 @@ public class DataContextTests
         audits.Should().NotContain(a => a.EntityId == 1);
     }
 
+    //
+    // TESTING SOFT DELETE
+    //
+    [Fact]
+    public async Task SoftDelete_WhenUserEntityDeleted_ShouldBeFilteredFromQueries()
+    {
+        var context = CreateContext();
+        var entity = new UserEntity
+        {
+            Forename = "Soft",
+            Surname = "Delete",
+            Email = "softdelete@example.com",
+            UserRole = "User",
+        };
+        await context.CreateAsync(entity);
+        await context.SaveChangesAsync();
+
+        //Mark as deleted
+        entity.Deleted = true;
+        context.UpdateE(entity);
+        await context.SaveChangesAsync();
+
+        //With query filter default applied in DataContext - should hide it
+        var users = context.GetAll<UserEntity>();
+        users.Should().NotContain(u => u.Email == entity.Email);
+
+        //Ignoring filters - should find entity
+        var allUsers = context.Set<UserEntity>().IgnoreQueryFilters();
+        allUsers.Should().ContainSingle(u => u.Email == entity.Email && u.Deleted);
+    }
+
+
 
     //New DB per test to ensure isolation
     private DataContext CreateContext()
@@ -136,6 +168,9 @@ public class TestDataContext : DataContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        //Filter still applied
+        modelBuilder.Entity<UserEntity>().HasQueryFilter(u => !u.Deleted);
+
         //No seed data
     }
 }

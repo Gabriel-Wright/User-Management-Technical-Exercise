@@ -27,22 +27,25 @@ public class DataContext : DbContext, IDataContext
         }
     }
 
-    protected override void OnModelCreating(ModelBuilder model)
-        => model.Entity<UserEntity>().HasData(new[]
-        {
-            new UserEntity { Id = 1, Forename = "Peter", Surname = "Loew", Email = "ploew@example.com", IsActive = true },
-            new UserEntity { Id = 2, Forename = "Benjamin Franklin", Surname = "Gates", Email = "bfgates@example.com", IsActive = true },
-            new UserEntity { Id = 3, Forename = "Castor", Surname = "Troy", Email = "ctroy@example.com", IsActive = false },
-            new UserEntity { Id = 4, Forename = "Memphis", Surname = "Raines", Email = "mraines@example.com", IsActive = true },
-            new UserEntity { Id = 5, Forename = "Stanley", Surname = "Goodspeed", Email = "sgodspeed@example.com", IsActive = true },
-            new UserEntity { Id = 6, Forename = "H.I.", Surname = "McDunnough", Email = "himcdunnough@example.com", IsActive = true },
-            new UserEntity { Id = 7, Forename = "Cameron", Surname = "Poe", Email = "cpoe@example.com", IsActive = false },
-            new UserEntity { Id = 8, Forename = "Edward", Surname = "Malus", Email = "emalus@example.com", IsActive = false },
-            new UserEntity { Id = 9, Forename = "Damon", Surname = "Macready", Email = "dmacready@example.com", IsActive = false },
-            new UserEntity { Id = 10, Forename = "Johnny", Surname = "Blaze", Email = "jblaze@example.com", IsActive = true },
-            new UserEntity { Id = 11, Forename = "Robin", Surname = "Feld", Email = "rfeld@example.com", IsActive = true },
-        });
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserEntity>().HasQueryFilter(u => !u.Deleted);
 
+        modelBuilder.Entity<UserEntity>().HasData(new[]
+        {
+        new UserEntity { Id = 1, Forename = "Peter", Surname = "Loew", Email = "ploew@example.com", IsActive = true, Deleted = false },
+        new UserEntity { Id = 2, Forename = "Benjamin Franklin", Surname = "Gates", Email = "bfgates@example.com", IsActive = true, Deleted = false },
+        new UserEntity { Id = 3, Forename = "Castor", Surname = "Troy", Email = "ctroy@example.com", IsActive = false, Deleted = false },
+        new UserEntity { Id = 4, Forename = "Memphis", Surname = "Raines", Email = "mraines@example.com", IsActive = true, Deleted = false },
+        new UserEntity { Id = 5, Forename = "Stanley", Surname = "Goodspeed", Email = "sgodspeed@example.com", IsActive = true, Deleted = false },
+        new UserEntity { Id = 6, Forename = "H.I.", Surname = "McDunnough", Email = "himcdunnough@example.com", IsActive = true, Deleted = false },
+        new UserEntity { Id = 7, Forename = "Cameron", Surname = "Poe", Email = "cpoe@example.com", IsActive = false, Deleted = false },
+        new UserEntity { Id = 8, Forename = "Edward", Surname = "Malus", Email = "emalus@example.com", IsActive = false, Deleted = false },
+        new UserEntity { Id = 9, Forename = "Damon", Surname = "Macready", Email = "dmacready@example.com", IsActive = false, Deleted = false },
+        new UserEntity { Id = 10, Forename = "Johnny", Surname = "Blaze", Email = "jblaze@example.com", IsActive = true, Deleted = false },
+        new UserEntity { Id = 11, Forename = "Robin", Surname = "Feld", Email = "rfeld@example.com", IsActive = true, Deleted = false },
+    });
+    }
     public DbSet<UserEntity>? Users { get; set; }
 
     public DbSet<AuditEntity>? Audits { get; set; }

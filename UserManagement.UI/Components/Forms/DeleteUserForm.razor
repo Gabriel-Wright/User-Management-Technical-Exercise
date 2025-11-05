@@ -49,7 +49,7 @@
 
         try
         {
-            await UserService.DeleteUserAsync(User!.Id);
+            await UserService.SoftDeleteUserAsync(User!.Id);
             await OnDeleted.InvokeAsync(User);
             await Close();
         }

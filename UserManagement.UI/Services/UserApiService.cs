@@ -75,6 +75,19 @@ public class UserApiService
                 (int)response.StatusCode);
         }
     }
+
+    public async Task SoftDeleteUserAsync(long userId)
+    {
+        var response = await _httpClient.DeleteAsync($"users/soft/{userId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorText = await response.Content.ReadAsStringAsync();
+            throw new UserApiException(
+                $"Server returned {(int)response.StatusCode}: {errorText}",
+                (int)response.StatusCode);
+        }
+    }
     public async Task<UserDto> PatchUserAsync(long id, UserPatchDto patchDto)
     {
         var response = await _httpClient.PatchAsJsonAsync($"users/{id}", patchDto);

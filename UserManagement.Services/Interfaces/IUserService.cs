@@ -19,6 +19,7 @@ public interface IUserService
     Task<User> AddUserAsync(User user);
     public Task<User> UpdateUserAsync(User user);
     public Task DeleteUserAsync(long id);
+    public Task SoftDeleteUserAsync(long id);
     public Task SaveAsync();
 
 }

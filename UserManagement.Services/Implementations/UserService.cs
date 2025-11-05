@@ -168,6 +168,7 @@ public class UserService : IUserService
             throw new KeyNotFoundException($"User with ID {user.Id} not found.");
         }
 
+        //Is manually setting entity values here bad?
         existing.Forename = user.Forename;
         existing.Surname = user.Surname;
         existing.Email = user.Email;
@@ -192,6 +193,19 @@ public class UserService : IUserService
         }
 
         _dataAccess.Delete(existing);
+    }
+
+    public async Task SoftDeleteUserAsync(long id)
+    {
+        var existing = await _dataAccess.GetAll<UserEntity>()
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (existing == null)
+            throw new KeyNotFoundException($"User with ID {id} not found.");
+
+        existing.Deleted = true;
+        _dataAccess.UpdateE(existing);
+        await _dataAccess.SaveChangesAsync();
     }
 
     public async Task SaveAsync()
