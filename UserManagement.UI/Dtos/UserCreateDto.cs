@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using UserManagement.UI.Validation;
 
 namespace UserManagement.UI.Dtos
 {
@@ -18,6 +19,8 @@ namespace UserManagement.UI.Dtos
         public string Email { get; set; } = "example@email.com";
         public int Role { get; set; } = 0;
         public bool IsActive { get; set; } = true;
+        [DataType(DataType.Date)]
+        [BirthDate(MinAge = 18, MaxAge = 120)]
         public DateTime BirthDate
         {
             get; set;

@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using UserManagement.Services.Domain;
+using UserManagement.Services.Validation;
 
 namespace UserManagement.Web.Dtos
 {
@@ -18,7 +19,7 @@ namespace UserManagement.Web.Dtos
         [EnumDataType(typeof(UserRole), ErrorMessage = "Invalid role specified.")]
         public UserRole Role { get; set; } = UserRole.User;
         public bool IsActive { get; set; }
-
+        [BirthDate]
         public DateTime BirthDate { get; set; }
     }
 }

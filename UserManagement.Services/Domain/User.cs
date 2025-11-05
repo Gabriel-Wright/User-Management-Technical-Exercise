@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using UserManagement.Services.Validation;
 
 namespace UserManagement.Services.Domain;
 
@@ -29,6 +30,7 @@ public class User
 
     [Required(ErrorMessage = "Date of birth is required")]
     [DataType(DataType.Date)]
+    [BirthDate(MinAge = 18, MaxAge = 120)]
     public DateTime BirthDate { get; set; }
 
 

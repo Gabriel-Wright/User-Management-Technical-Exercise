@@ -335,7 +335,8 @@ public class UserServiceTests
             Forename = "Mr",
             Surname = "Messy",
             Email = "messy@gmail.com",
-            IsActive = true
+            IsActive = true,
+            BirthDate = DateTime.Today.AddYears(-30)
         };
 
         Func<Task> act = async () => await service.AddUserAsync(duplicateUser);
@@ -543,6 +544,51 @@ public class UserServiceTests
             .WithMessage("*not found*");
     }
 
+    //Birthday attribute validation
+    [Fact]
+    public async Task AddUserAsync_WithBirthDateTooYoung_ShouldThrowValidationException()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        var newUser = new User
+        {
+            Forename = "Bart",
+            Surname = "Simpson",
+            Email = "cowman@yahoo.com",
+            Role = UserRole.User,
+            IsActive = true,
+            BirthDate = DateTime.Today.AddYears(-17)
+        };
+
+        Func<Task> act = async () => await service.AddUserAsync(newUser);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("User must be at least 18 years old.");
+    }
+
+    [Fact]
+    public async Task AddUserAsync_WithBirthDateTooOld_ShouldThrowValidationException()
+    {
+        var context = CreateContext();
+        var service = new UserService(context);
+
+        var newUser = new User
+        {
+            Forename = "Abe",
+            Surname = "Simpson",
+            Email = "abe@example.com",
+            Role = UserRole.User,
+            IsActive = true,
+            BirthDate = DateTime.Today.AddYears(-121)
+        };
+
+        Func<Task> act = async () => await service.AddUserAsync(newUser);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("User cannot be older than 120 years.");
+    }
+
     ///   ====================
     ///   TEST SETUP FUNCTIONS
     ///   ====================
@@ -578,7 +624,8 @@ public class UserServiceTests
             Forename = "Mr",
             Surname = "Messy",
             Email = "messy@gmail.com",
-            IsActive = true
+            IsActive = true,
+            BirthDate = DateTime.Today.AddYears(-30)
         });
 
         await context.CreateAsync(new UserEntity
@@ -586,7 +633,8 @@ public class UserServiceTests
             Forename = "Mrs",
             Surname = "Tickle",
             Email = "tickle@yahoo.com",
-            IsActive = false
+            IsActive = false,
+            BirthDate = DateTime.Today.AddYears(-40)
         });
     }
 

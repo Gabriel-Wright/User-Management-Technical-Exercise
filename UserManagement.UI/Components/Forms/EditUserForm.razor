@@ -52,7 +52,8 @@
 
                         <div class="mb-3">
                             <label class="form-label">Birth Day</label>
-                            <input class="form-control" type="date" @bind="EditableUser.BirthDate" />
+                            <input class="form-control" type="date" @bind="EditableUser.BirthDate"
+                                min="@MinBirthDate.ToString("yyyy-MM-dd")" max="@MaxBirthDate.ToString("yyyy-MM-dd")" />
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Save</button>
@@ -74,6 +75,8 @@
 
     [Inject] public UserApiService UserService { get; set; } = default!;
 
+    private DateTime MinBirthDate => DateTime.Today.AddYears(-120);
+    private DateTime MaxBirthDate => DateTime.Today.AddYears(-18);
     private string ErrorMessage = "";
     private UserPatchDto EditableUser = new();
 
