@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using UserManagement.U.Validation;
 using UserManagement.UI.Validation;
 
 namespace UserManagement.UI.Dtos
