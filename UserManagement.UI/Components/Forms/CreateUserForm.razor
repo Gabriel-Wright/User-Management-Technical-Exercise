@@ -2,7 +2,8 @@
 @using UserManagement.UI.Dtos
 @using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
-
+@* With these Form Components - I considered having one parent component e.g. general form, and then
+these forms apply that -> But I felt the extraarchitecture was a bit unncessary for this particular use case. *@
 @if (IsVisible)
 {
     <div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
