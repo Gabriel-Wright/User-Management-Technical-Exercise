@@ -32,34 +32,53 @@ else
         <tbody>
             @foreach (var user in users)
             {
-                <UserRow User="user" OnView="ShowUserModal" />
+                <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" />
             }
         </tbody>
     </table>
 }
 
-<ViewUserForm IsVisible="isViewUserFormVisible" User="selectedUser" OnClose="CloseModal" />
-
+<ViewUserForm IsVisible="isViewUserFormVisible" User="selectedViewUser" OnClose="CloseViewModal" />
+<DeleteUserForm IsVisible="isDeleteUserFormVisible" User="selectedDeleteUser" OnClose="CloseDeleteModal"
+    OnDeleted="HandleUserDeleted" />
 @code {
     private List<UserDto>? users;
 
     private bool isViewUserFormVisible = false;
-    private UserDto? selectedUser;
-
+    private bool isDeleteUserFormVisible = false;
+    private UserDto? selectedViewUser;
+    private UserDto? selectedDeleteUser;
     protected override async Task OnInitializedAsync()
     {
         users = await UserService.GetAllAsync();
     }
 
-    private void ShowUserModal(UserDto user)
+    private void ShowUserViewModal(UserDto user)
     {
-        selectedUser = user;
+        selectedViewUser = user;
         isViewUserFormVisible = true;
     }
 
-    private void CloseModal()
+    private void CloseViewModal()
     {
         isViewUserFormVisible = false;
-        selectedUser = null;
+        selectedViewUser = null;
+    }
+
+    private void ShowUserDeleteModal(UserDto user)
+    {
+        selectedDeleteUser = user;
+        isDeleteUserFormVisible = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteUserFormVisible = false;
+        selectedDeleteUser = null;
+    }
+    private void HandleUserDeleted(UserDto deleted)
+    {
+        users!.RemoveAll(u => u.Id == deleted.Id);
+        CloseDeleteModal();
     }
 }

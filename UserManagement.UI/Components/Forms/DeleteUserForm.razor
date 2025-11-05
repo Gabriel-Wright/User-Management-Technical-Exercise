@@ -1,0 +1,62 @@
+@namespace UserManagement.UI.Components
+@using UserManagement.UI.Dtos
+@using UserManagement.UI.Services
+@if (IsVisible && User != null)
+{
+    <div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete User</h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger">Unexpected Error Occurred</div>
+                        <div class="alert alert-danger">@ErrorMessage</div>
+                    }
+
+                    <p>Are you sure you want to delete <strong>@User.Forename @User.Surname</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="Close">Cancel</button>
+                    <button class="btn btn-danger" @onclick="DeleteUser">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public UserDto? User { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<UserDto> OnDeleted { get; set; }
+
+    [Inject] public UserApiService UserService { get; set; } = default!;
+
+    private string ErrorMessage = "";
+
+    private async Task DeleteUser()
+    {
+        try
+        {
+            await UserService.DeleteUserAsync(User!.Id);
+            await OnDeleted.InvokeAsync(User);
+            await Close();
+        }
+        //Maybe unnecessary / bad to display error message here when deleting - user doesn't need to know?
+        //Better to just show in UI. For now this is fine.
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task Close()
+    {
+        ErrorMessage = "";
+        await OnClose.InvokeAsync();
+    }
+}
