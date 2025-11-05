@@ -148,6 +148,19 @@ public class UserService : IUserService
         var existing = await _dataAccess.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u => u.Id == user.Id);
 
+        //Check email uniqueness - would be nice if could reuse a funct here to check this.
+        //But also need to check whether Id is the same - unlike in Add.
+        var duplicateEmailUser = await _dataAccess.GetAll<UserEntity>()
+            .FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == user.Email.ToLower() &&
+                u.Id != user.Id);
+
+        if (duplicateEmailUser != null)
+        {
+            Log.Error("Email '{email}' is already in use by another user (Id {otherId}).",
+                user.Email, duplicateEmailUser.Id);
+            throw new InvalidOperationException($"User with email '{user.Email}' already exists.");
+        }
 
         if (existing == null)
         {

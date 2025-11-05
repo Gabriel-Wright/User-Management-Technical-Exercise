@@ -110,6 +110,8 @@
                 ErrorMessage = "User no longer exists.";
             else if (ex.StatusCode == 400)
                 ErrorMessage = "Invalid input, please check your data.";
+            else if (ex.StatusCode == 409)
+                ErrorMessage = "A user with this email already exists.";
             else
                 ErrorMessage = "Unexpected server error. Please try again.";
         }
