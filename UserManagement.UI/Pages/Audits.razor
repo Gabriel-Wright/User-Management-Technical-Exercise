@@ -1,0 +1,70 @@
+@page "/audits"
+@using UserManagement.UI.Dtos
+@using UserManagement.UI.Services
+
+@inject IUserAuditApiService UserAuditService
+
+<h3>User Audits</h3>
+
+@if (loading)
+{
+    <p>Loading audits...</p>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (audits?.Any() != true)
+{
+    <p>No audits found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Audit Id</th>
+                <th>User Id</th>
+                <th>Action</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var audit in audits)
+            {
+                <tr>
+                    <td>@audit.Id</td>
+                    <td>@audit.UserId</td>
+                    <td>@audit.Action</td>
+                    <td>@audit.LoggedAt.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserAuditDto> audits = new();
+    private bool loading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await UserAuditService.GetAllAuditsAsync(page: 1, pageSize: 20);
+            audits = result.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading audits: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

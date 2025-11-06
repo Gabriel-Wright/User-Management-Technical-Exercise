@@ -27,9 +27,6 @@ public class UserAuditsController : ControllerBase
         Log.Information("Feching all audits for page {page} of size {size}", page, pageSize);
         (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAllUserAudits(page, pageSize);
 
-        if (audits == null || !audits.Any())
-            return NotFound("No audits found.");
-
         var result = new PagedResult<UserAuditDto>
         {
             Items = audits.Select(UserAuditDtoMapper.ToDto).ToList(),
@@ -52,9 +49,6 @@ public class UserAuditsController : ControllerBase
             return BadRequest("Invalid user ID.");
 
         (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAllUserAuditsById(userId, page, pageSize);
-
-        if (audits == null || !audits.Any())
-            return NotFound($"No audits found for user {userId}.");
 
         var result = new PagedResult<UserAuditDto>
         {
