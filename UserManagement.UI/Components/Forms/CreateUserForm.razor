@@ -4,74 +4,71 @@
 @using UserManagement.UI.Services
 @* With these Form Components - I considered having one parent component e.g. general form, and then
 these forms apply that -> But I felt the extraarchitecture was a bit unncessary for this particular use case. *@
-@if (IsVisible)
-{
-    <div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create User</h5>
-                </div>
-                <div class="modal-body">
-                    <EditForm Model="NewUser" OnValidSubmit="SaveChanges">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-                        @if (!string.IsNullOrEmpty(ErrorMessage))
-                        {
-                            <div class="alert alert-danger">@ErrorMessage</div>
-                        }
+<div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create User</h5>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="NewUser" OnValidSubmit="SaveChanges">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@ErrorMessage</div>
+                    }
 
-                        <div class="mb-3">
-                            <label class="form-label">Forename</label>
-                            <InputText id="forename" class="form-control" @bind-Value="NewUser.Forename" />
-                            <ValidationMessage For="@(() => NewUser.Forename)" />
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Forename</label>
+                        <InputText id="forename" class="form-control" @bind-Value="NewUser.Forename" />
+                        <ValidationMessage For="@(() => NewUser.Forename)" />
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Surname</label>
-                            <InputText id="surname" class="form-control" @bind-Value="NewUser.Surname" />
-                            <ValidationMessage For="@(() => NewUser.Surname)" />
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Surname</label>
+                        <InputText id="surname" class="form-control" @bind-Value="NewUser.Surname" />
+                        <ValidationMessage For="@(() => NewUser.Surname)" />
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <InputText id="email" class="form-control" @bind-Value="NewUser.Email" />
-                            <ValidationMessage For="@(() => NewUser.Email)" />
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <InputText id="email" class="form-control" @bind-Value="NewUser.Email" />
+                        <ValidationMessage For="@(() => NewUser.Email)" />
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Role</label>
-                            <select id="role" class="form-select" @bind="NewUser.Role">
-                                <option value="0">User</option>
-                                <option value="1">Admin</option>
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select id="role" class="form-select" @bind="NewUser.Role">
+                            <option value="0">User</option>
+                            <option value="1">Admin</option>
+                        </select>
+                    </div>
 
-                        <div class="form-check mb-3">
-                            <InputCheckbox id="isActive" class="form-check-input" @bind-Value="NewUser.IsActive" />
-                            <label class="form-check-label" for="isActive">Active</label>
-                        </div>
+                    <div class="form-check mb-3">
+                        <InputCheckbox id="isActive" class="form-check-input" @bind-Value="NewUser.IsActive" />
+                        <label class="form-check-label" for="isActive">Active</label>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Birth Date</label>
-                            <InputDate id="birthday" class="form-control" @bind-Value="NewUser.BirthDate"
-                                min="@MinBirthDate.ToString("yyyy-MM-dd")" max="@MaxBirthDate.ToString("yyyy-MM-dd")" />
-                            <ValidationMessage For="@(() => NewUser.BirthDate)" />
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Birth Date</label>
+                        <InputDate id="birthday" class="form-control" @bind-Value="NewUser.BirthDate"
+                            min="@MinBirthDate.ToString("yyyy-MM-dd")" max="@MaxBirthDate.ToString("yyyy-MM-dd")" />
+                        <ValidationMessage For="@(() => NewUser.BirthDate)" />
+                    </div>
 
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary disabled=" @IsCreating"">Create</button>
-                            <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
-                        </div>
-                    </EditForm>
-                </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary disabled=" @IsCreating"">Create</button>
+                        <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
+                    </div>
+                </EditForm>
             </div>
         </div>
     </div>
-}
+</div>
+
 
 @code {
-    [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<UserDto> OnCreated { get; set; }
 

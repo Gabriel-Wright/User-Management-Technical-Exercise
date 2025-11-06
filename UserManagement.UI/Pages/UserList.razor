@@ -3,6 +3,7 @@
 <PageTitle>UMS List Users</PageTitle>
 
 @using System.Threading.Channels
+@using System.ComponentModel
 @using UserManagement.UI.Dtos
 @using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
@@ -55,16 +56,29 @@
         break;
 
 }
-<ViewUserForm IsVisible="currentForm == VisibleForm.ViewUser" User="SelectedViewUser" OnClose="CloseViewModal" />
-<DeleteUserForm IsVisible="currentForm == VisibleForm.DeleteUser" User="SelectedDeleteUser" OnClose="CloseDeleteModal"
-    OnDeleted="HandleUserDeleted" />
-<EditUserForm IsVisible="currentForm == VisibleForm.EditUser" User="SelectedEditUser" OnClose="CloseEditModal"
-    OnUpdated="HandleUserUpdated" />
-<CreateUserForm IsVisible="currentForm == VisibleForm.CreateUser" OnClose="CloseCreateUserModal"
-    OnCreated="HandleUserCreated" />
-<ViewUserAuditsForm IsVisible="currentForm == VisibleForm.ViewUserAudit" User="SelectedViewUserAudit" Audits="audits"
-    OnClose="CloseViewUserAuditModal" ErrorMessage="@AuditLoadErrorMessage" CurrentPage="@AuditCurrentPage"
-    TotalPages="@AuditTotalPages" OnPageChanged="HandleAuditPageChanged" />
+@switch (currentForm)
+{
+    case VisibleForm.None:
+        break;
+    case VisibleForm.ViewUser:
+        <ViewUserForm User="SelectedViewUser" OnClose="CloseViewModal" />
+        break;
+    case VisibleForm.DeleteUser:
+        <DeleteUserForm User="SelectedDeleteUser" OnClose="CloseDeleteModal" OnDeleted="HandleUserDeleted" />
+        break;
+    case VisibleForm.EditUser:
+        <EditUserForm User="SelectedEditUser" OnClose="CloseEditModal" OnUpdated="HandleUserUpdated" />
+        break;
+    case VisibleForm.CreateUser:
+        <CreateUserForm OnClose="CloseCreateUserModal" OnCreated="HandleUserCreated" />
+        break;
+    case VisibleForm.ViewUserHistory:
+        <ViewUserHistoryForm User="SelectedViewUserAudit" Audits="audits" OnClose="CloseViewUserAuditModal"
+            ErrorMessage="@AuditLoadErrorMessage" CurrentPage="@AuditCurrentPage" TotalPages="@AuditTotalPages"
+            OnPageChanged="HandleAuditPageChanged" />
+        break;
+
+}
 
 @code {
     //State for how the List will be viewed
@@ -79,7 +93,7 @@
     {
         None,
         ViewUser,
-        ViewUserAudit,
+        ViewUserHistory,
         EditUser,
         DeleteUser,
         CreateUser
@@ -134,7 +148,7 @@
         AuditCurrentPage = 1;
 
         await LoadUserAudits(SelectedViewUserAudit.Id, AuditCurrentPage);
-        currentForm = VisibleForm.ViewUserAudit;
+        currentForm = VisibleForm.ViewUserHistory;
     }
     private async Task LoadUserAudits(long userId, int auditCurrentPage)
     {

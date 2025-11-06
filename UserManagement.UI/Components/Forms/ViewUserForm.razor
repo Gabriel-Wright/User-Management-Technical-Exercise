@@ -1,54 +1,52 @@
 @namespace UserManagement.UI.Components
 @using UserManagement.UI.Dtos
 
-@if (IsVisible && User != null)
-{
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">User Details</h5>
-                </div>
-                <div class="modal-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">ID:</dt>
-                        <dd class="col-sm-8">@User.Id</dd>
 
-                        <dt class="col-sm-4">Name:</dt>
-                        <dd class="col-sm-8">@User.Forename @User.Surname</dd>
+<div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">User Details</h5>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">@User.Id</dd>
 
-                        <dt class="col-sm-4">Email:</dt>
-                        <dd class="col-sm-8">@User.Email</dd>
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8">@User.Forename @User.Surname</dd>
 
-                        <dt class="col-sm-4">Role:</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge bg-info">
-                                @(User.Role == 0 ? "User" : "Admin")
-                            </span>
-                        </dd>
+                    <dt class="col-sm-4">Email:</dt>
+                    <dd class="col-sm-8">@User.Email</dd>
 
-                        <dt class="col-sm-4">Status:</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge @(User.IsActive ? "bg-success" : "bg-secondary")">
-                                @(User.IsActive ? "Active" : "Inactive")
-                            </span>
-                        </dd>
+                    <dt class="col-sm-4">Role:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-info">
+                            @(User.Role == 0 ? "User" : "Admin")
+                        </span>
+                    </dd>
 
-                        <dt class="col-sm-4">Birth Date:</dt>
-                        <dd class="col-sm-8">@User.BirthDate.ToString("yyyy-MM-dd")</dd>
-                    </dl>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="Close">Close</button>
-                </div>
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(User.IsActive ? "bg-success" : "bg-secondary")">
+                            @(User.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Birth Date:</dt>
+                    <dd class="col-sm-8">@User.BirthDate.ToString("yyyy-MM-dd")</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="Close">Close</button>
             </div>
         </div>
     </div>
-}
+</div>
+
 
 @code {
-    [Parameter] public bool IsVisible { get; set; }
-    [Parameter] public UserDto? User { get; set; }
+    [Parameter] public UserDto User { get; set; } = new UserDto();
     [Parameter] public EventCallback OnClose { get; set; }
     private async Task Close()
     {

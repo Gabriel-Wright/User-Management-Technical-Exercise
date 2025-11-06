@@ -41,8 +41,11 @@ else
 
     <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
 }
-<ViewAuditForm IsVisible="ShowAuditView" Audit="SelectedAuditDto" OnCloseAudit="CloseAuditModal" />
 
+@if (ShowAuditView)
+{
+    <ViewAuditForm Audit="SelectedAuditDto" OnCloseAudit="CloseAuditModal" />
+}
 
 @code {
     private List<UserAuditDto> audits = new();

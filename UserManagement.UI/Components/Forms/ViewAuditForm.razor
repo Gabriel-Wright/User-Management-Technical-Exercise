@@ -1,43 +1,39 @@
 @namespace UserManagement.UI.Components
 @using UserManagement.UI.Dtos
 
-@if (IsVisible && Audit != null)
-{
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Audit Details</h5>
-                </div>
-                <div class="modal-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">ID:</dt>
-                        <dd class="col-sm-8">@Audit.Id</dd>
+<div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Audit Details</h5>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">@Audit.Id</dd>
 
-                        <dt class="col-sm-4">Action Applied:</dt>
-                        <dd class="col-sm-8">@Audit.Action</dd>
+                    <dt class="col-sm-4">Action Applied:</dt>
+                    <dd class="col-sm-8">@Audit.Action</dd>
 
 
-                        <dt class="col-sm-4">Affected User Id:</dt>
-                        <dd class="col-sm-8">@Audit.UserId</dd>
+                    <dt class="col-sm-4">Affected User Id:</dt>
+                    <dd class="col-sm-8">@Audit.UserId</dd>
 
-                        <dt class="col-sm-4">Logged At:</dt>
-                        <dd class="col-sm-8">@Audit.LoggedAt</dd>
+                    <dt class="col-sm-4">Logged At:</dt>
+                    <dd class="col-sm-8">@Audit.LoggedAt</dd>
 
-                        <ViewAuditChangeTable Audit="@Audit" />
-                    </dl>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="Close">Close</button>
-                </div>
+                    <ViewAuditChangeTable Audit="@Audit" />
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="Close">Close</button>
             </div>
         </div>
     </div>
-}
+</div>
 
 @code {
-    [Parameter] public bool IsVisible { get; set; }
-    [Parameter] public UserAuditDto? Audit { get; set; }
+    [Parameter] public UserAuditDto Audit { get; set; } = new UserAuditDto();
     [Parameter] public EventCallback OnCloseAudit { get; set; }
     private async Task Close()
     {

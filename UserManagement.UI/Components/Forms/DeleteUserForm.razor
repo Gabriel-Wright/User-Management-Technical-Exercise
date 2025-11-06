@@ -2,34 +2,31 @@
 @using UserManagement.UI.Dtos
 @using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
-@if (IsVisible && User != null)
-{
-    <div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete User</h5>
-                </div>
-                <div class="modal-body">
-                    @if (!string.IsNullOrEmpty(ErrorMessage))
-                    {
-                        <div class="alert alert-danger">@ErrorMessage</div>
-                    }
+<div class="modal show d-block" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete User</h5>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger">@ErrorMessage</div>
+                }
 
-                    <p>Are you sure you want to delete <strong>@User.Forename @User.Surname</strong>?</p>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-danger" @onclick="DeleteUser" disabled="@IsDeleting">Delete</button>
-                    <button class="btn btn-secondary" @onclick="Close">Cancel</button>
-                </div>
+                <p>Are you sure you want to delete <strong>@User.Forename @User.Surname</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" @onclick="DeleteUser" disabled="@IsDeleting">Delete</button>
+                <button class="btn btn-secondary" @onclick="Close">Cancel</button>
             </div>
         </div>
     </div>
-}
+</div>
+
 
 @code {
-    [Parameter] public bool IsVisible { get; set; }
-    [Parameter] public UserDto? User { get; set; }
+    [Parameter] public UserDto User { get; set; } = new UserDto();
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<UserDto> OnDeleted { get; set; }
     [Inject] public IUserApiService UserService { get; set; } = default!;

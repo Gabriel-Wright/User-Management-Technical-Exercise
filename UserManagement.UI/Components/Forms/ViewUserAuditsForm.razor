@@ -1,100 +1,92 @@
 @namespace UserManagement.UI.Components
-@using System.Collections
 @using UserManagement.UI.Dtos
 
-@if (IsVisible && User != null)
-{
-    @switch (currentModal)
-    {
-        case AuditModalState.List:
-            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Audit History - @User.Forename @User.Surname. UserID: @User.Id</h5>
-                            <button type="button" class="btn-close" @onclick="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            @if (!string.IsNullOrEmpty(ErrorMessage))
-                            {
-                                <div class="alert alert-danger">@ErrorMessage</div>
-                            }
-                            else if (Audits == null || !Audits.Any())
-                            {
-                                <p>No audit history found for this user.</p>
-                            }
-                            else
-                            {
-                                <table class="table table-sm table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Audit Id</th>
-                                            <th>Logged At</th>
-                                            <th>Action</th>
-                                            <th>Details</th> @* placeholder for the View button *@
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var audit in Audits)
-                                        {
-                                            <tr>
-                                                <td>@audit.Id</td>
-                                                <td>@audit.LoggedAt</td>
-                                                <td>@audit.Action</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-primary"
-                                                        @onclick="() => ShowAuditModal(audit)">View</button>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                                <div class="d-flex justify-content-center mt-3">
-                                    <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="OnPageChanged" />
-                                </div>
-                            }
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" @onclick="Close">Close</button>
-                        </div>
-                    </div>
-                </div>
+<div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Audit History - @User.Forename @User.Surname (User ID: @User.Id)
+                </h5>
+                <button type="button" class="btn-close" @onclick="HandleClose"></button>
             </div>
-            break;
-        case AuditModalState.Details:
-            <ViewAuditForm IsVisible="true" Audit="SelectedAudit" OnCloseAudit="CloseAuditModal" />
-            break;
-    }
-}
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger">@ErrorMessage</div>
+                }
+                else if (Audits == null || !Audits.Any())
+                {
+                    <p class="text-muted">No audit history found for this user.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Audit ID</th>
+                                    <th>Logged At</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var audit in Audits)
+                                {
+                                    <tr>
+                                        <td>@audit.Id</td>
+                                        <td>@audit.LoggedAt</td>
+                                        <td>@audit.Action
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" @onclick="() => HandleViewDetails(audit)">
+                                                View Changes
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (TotalPages > 1)
+                    {
+                        <div class="d-flex justify-content-center mt-3">
+                            <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
+                        </div>
+                    }
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="HandleClose">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @code {
-    [Parameter] public bool IsVisible { get; set; }
-    private AuditModalState currentModal = AuditModalState.List;
-    private enum AuditModalState
-    {
-        List, //All Audits
-        Details //Specific Changes
-    }
-    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public UserDto User { get; set; } = new UserDto();
     [Parameter] public List<UserAuditDto>? Audits { get; set; }
-    private UserAuditDto? SelectedAudit { get; set; }
-    [Parameter] public UserDto? User { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public int CurrentPage { get; set; }
     [Parameter] public int TotalPages { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<UserAuditDto> OnViewAuditDetails { get; set; }
     [Parameter] public EventCallback<int> OnPageChanged { get; set; }
-    private void ShowAuditModal(UserAuditDto userAuditDto)
-    {
-        SelectedAudit = userAuditDto;
-        currentModal = AuditModalState.Details;
-    }
-    private async Task Close()
+
+    private async Task HandleClose()
     {
         await OnClose.InvokeAsync();
     }
 
-    private void CloseAuditModal()
+    private async Task HandleViewDetails(UserAuditDto audit)
     {
-        SelectedAudit = null;
-        currentModal = AuditModalState.List;
+        await OnViewAuditDetails.InvokeAsync(audit);
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        await OnPageChanged.InvokeAsync(newPage);
     }
 }

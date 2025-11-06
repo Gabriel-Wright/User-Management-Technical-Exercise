@@ -1,0 +1,45 @@
+@namespace UserManagement.UI.Components
+@using System.Collections
+@using UserManagement.UI.Dtos
+
+@switch (currentModal)
+{
+    case AuditModalState.List:
+        <ViewUserAuditsForm User="User" Audits="Audits" ErrorMessage="@ErrorMessage" CurrentPage="CurrentPage"
+            TotalPages="TotalPages" OnClose="Close" OnViewAuditDetails="ShowAuditModal" OnPageChanged="OnPageChanged" />
+        break;
+    case AuditModalState.Details:
+        <ViewAuditForm Audit="SelectedAudit" OnCloseAudit="CloseAuditModal" />
+        break;
+}
+@code {
+    private AuditModalState currentModal = AuditModalState.List;
+    private enum AuditModalState
+    {
+        List, //All Audits
+        Details //Specific Changes
+    }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public List<UserAuditDto>? Audits { get; set; }
+    private UserAuditDto? SelectedAudit { get; set; }
+    [Parameter] public UserDto User { get; set; } = new UserDto();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public int CurrentPage { get; set; }
+    [Parameter] public int TotalPages { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    private void ShowAuditModal(UserAuditDto userAuditDto)
+    {
+        SelectedAudit = userAuditDto;
+        currentModal = AuditModalState.Details;
+    }
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private void CloseAuditModal()
+    {
+        SelectedAudit = null;
+        currentModal = AuditModalState.List;
+    }
+}
