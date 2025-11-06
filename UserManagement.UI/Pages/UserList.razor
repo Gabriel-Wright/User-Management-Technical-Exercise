@@ -2,11 +2,13 @@
 
 <PageTitle>UMS List Users</PageTitle>
 
+@using System.Threading.Channels
 @using UserManagement.UI.Dtos
 @using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
 @using UserManagement.UI.Components
 @inject IUserApiService UserService
+@inject IUserAuditApiService UserAuditApiService
 
 <h3>User List</h3>
 <UserSearchBar SearchTerm="@SearchTerm" SearchTermChanged="@((val) => SearchTerm = val)"
@@ -41,7 +43,8 @@
             <tbody>
                 @foreach (var user in users!)
                 {
-                    <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" OnEdit="ShowUserEditModal" />
+                    <UserRow User="user" OnView="ShowUserViewModal" OnDelete="ShowUserDeleteModal" OnEdit="ShowUserEditModal"
+                        OnUserAuditView="ShowViewUserAuditModal" />
                 }
             </tbody>
         </table>
@@ -59,18 +62,23 @@
     OnUpdated="HandleUserUpdated" />
 <CreateUserForm IsVisible="currentForm == VisibleForm.CreateUser" OnClose="CloseCreateUserModal"
     OnCreated="HandleUserCreated" />
+<ViewUserAuditsForm IsVisible="currentForm == VisibleForm.ViewUserAudit" User="SelectedViewUserAudit" Audits="audits"
+    OnClose="CloseViewUserAuditModal" ErrorMessage="@AuditLoadErrorMessage" />
 
 @code {
     //State for how the List will be viewed
     private enum UserListState { Loading, Error, Empty, Data }
     private UserListState currentState = UserListState.Loading;
     private List<UserDto>? users;
+    private List<UserAuditDto>? audits;
     //This is to handle the scenario where e.g. can't connect to DB - or some other issue.
     private string? loadErrorMessage;
+    private string? AuditLoadErrorMessage;
     private enum VisibleForm
     {
         None,
         ViewUser,
+        ViewUserAudit,
         EditUser,
         DeleteUser,
         CreateUser
@@ -79,6 +87,7 @@
     private VisibleForm currentForm = VisibleForm.None;
 
     private UserDto? SelectedViewUser;
+    private UserDto? SelectedViewUserAudit;
     private UserDto? SelectedDeleteUser;
     private UserDto? SelectedEditUser;
 
@@ -106,6 +115,40 @@
     {
         currentForm = VisibleForm.None;
         SelectedViewUser = null;
+    }
+
+    private async Task ShowViewUserAuditModal(UserDto user)
+    {
+        SelectedViewUserAudit = user;
+        AuditLoadErrorMessage = null;
+        audits = new List<UserAuditDto>();
+
+        try
+        {
+            var result = await UserAuditApiService.GetAuditsByUserAsync(user.Id, page: 1, pageSize: 50);
+            audits = result.Items;
+            Console.WriteLine($"Loaded {audits.Count} audits for user {user.Id}");
+        }
+        catch (UserApiException ex)
+        {
+            AuditLoadErrorMessage = $"Failed to load audit history: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            AuditLoadErrorMessage = $"Unexpected error loading audit history: {ex.Message}";
+        }
+        finally
+        {
+            currentForm = VisibleForm.ViewUserAudit;
+        }
+    }
+
+
+
+    private void CloseViewUserAuditModal()
+    {
+        currentForm = VisibleForm.None;
+        SelectedViewUserAudit = null;
     }
 
     private void ShowUserDeleteModal(UserDto user)
@@ -226,6 +269,7 @@
             currentState = UserListState.Error;
         }
     }
+
     private bool? GetIsActiveFilter()
     {
         return SelectedActiveOption switch

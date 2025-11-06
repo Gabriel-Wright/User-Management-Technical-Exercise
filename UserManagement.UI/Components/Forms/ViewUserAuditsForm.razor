@@ -1,0 +1,98 @@
+@namespace UserManagement.UI.Components
+@using System.Collections
+@using UserManagement.UI.Dtos
+
+@if (IsVisible && User != null)
+{
+    @switch (currentModal)
+    {
+        case AuditModalState.List:
+            <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Audit History - @User.Forename @User.Surname. UserID: @User.Id</h5>
+                            <button type="button" class="btn-close" @onclick="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            @if (!string.IsNullOrEmpty(ErrorMessage))
+                            {
+                                <div class="alert alert-danger">@ErrorMessage</div>
+                            }
+                            else if (Audits == null || !Audits.Any())
+                            {
+                                <p>No audit history found for this user.</p>
+                            }
+                            else
+                            {
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Audit Id</th>
+                                            <th>Logged At</th>
+                                            <th>Action</th>
+                                            <th>Details</th> @* placeholder for the View button *@
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var audit in Audits)
+                                        {
+                                            <tr>
+                                                <td>@audit.Id</td>
+                                                <td>@audit.LoggedAt</td>
+                                                <td>@audit.Action</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary"
+                                                        @onclick="() => ShowAuditModal(audit)">View</button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" @onclick="Close">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            break;
+        case AuditModalState.Details:
+            <ViewAuditForm IsVisible="true" Audit="SelectedAudit" OnCloseAudit="CloseAuditModal" />
+            break;
+    }
+}
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    private AuditModalState currentModal = AuditModalState.List;
+    private enum AuditModalState
+    {
+        List, //All Audits
+        Details //Specific Changes
+    }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public List<UserAuditDto>? Audits { get; set; }
+    private UserAuditDto? SelectedAudit { get; set; }
+    [Parameter] public UserDto? User { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    @* private int CurrentPage = 1;
+    private readonly int PageSize = 5;
+    private int TotalCount; *@
+
+    private void ShowAuditModal(UserAuditDto userAuditDto)
+    {
+        SelectedAudit = userAuditDto;
+        currentModal = AuditModalState.Details;
+    }
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private void CloseAuditModal()
+    {
+        SelectedAudit = null;
+        currentModal = AuditModalState.List;
+    }
+}

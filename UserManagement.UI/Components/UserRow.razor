@@ -10,6 +10,7 @@
         <button class="btn btn-sm btn-primary" @onclick="() => OnView.InvokeAsync(User)">View</button>
         <button class="btn btn-sm btn-warning" @onclick="() => OnEdit.InvokeAsync(User)">Edit</button>
         <button class="btn btn-sm btn-danger" @onclick="() => OnDelete.InvokeAsync(User)">Delete</button>
+        <button class="btn btn-sm btn-secondary" @onclick="() => OnUserAuditView.InvokeAsync(User)">History</button>
     </td>
 </tr>
 
@@ -18,4 +19,5 @@
     [Parameter] public EventCallback<UserDto> OnView { get; set; }
     [Parameter] public EventCallback<UserDto> OnEdit { get; set; }
     [Parameter] public EventCallback<UserDto> OnDelete { get; set; }
+    [Parameter] public EventCallback<UserDto> OnUserAuditView { get; set; }
 }
