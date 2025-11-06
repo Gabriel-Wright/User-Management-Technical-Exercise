@@ -45,7 +45,31 @@ namespace UserManagement.Services.Domain.Implementations
             return (audits, totalCount);
         }
 
+        public async Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAuditsById(long id, int page, int pageSize)
+        {
+            //Should move this into a separate func
+            if (page < 1) page = 1;
+            if (pageSize <= 0) pageSize = 10;
+            if (pageSize > 20) pageSize = 20;
 
+            Log.Debug("Fetching paged audits. Page: {page}, num per page: {size}", page, pageSize);
+
+            var query = _dataContext.GetAll<UserAuditEntity>()
+            .Where(a => a.UserEntityId == id)
+            .Include(a => a.Changes)
+                .OrderByDescending(a => a.LoggedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var pagedAudits = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var audits = pagedAudits.Select(UserAuditMapper.ToDomainAudit);
+
+            return (audits, totalCount);
+        }
 
         public async Task CreateUserUpdatedAuditAsync(long userId, User oldUser, User newUser)
         {
