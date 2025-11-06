@@ -1,0 +1,53 @@
+@namespace UserManagement.UI.Components
+
+@using UserManagement.UI.Dtos
+@switch (@Audit.Action)
+{
+
+    case "Created":
+
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var change in @Audit.Changes)
+                {
+                    <tr>
+                        <td>@change.FieldName</td>
+                        <td>@change.After</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        break;
+    case "Updated":
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Before</th>
+                    <th>After</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var change in @Audit.Changes)
+                {
+                    <tr>
+                        <td>@change.FieldName</td>
+                        <td>@change.Before</td>
+                        <td>@change.After</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        break;
+
+}
+
+@code {
+    [Parameter] public UserAuditDto Audit { get; set; } = new UserAuditDto();
+}

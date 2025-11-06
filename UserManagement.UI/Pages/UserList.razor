@@ -8,6 +8,7 @@
 @using UserManagement.UI.Components
 @inject IUserApiService UserService
 
+<h3>User List</h3>
 <UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
     SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
     OnSearch="HandleSearch" />

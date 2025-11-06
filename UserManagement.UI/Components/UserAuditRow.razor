@@ -1,0 +1,16 @@
+@using UserManagement.UI.Dtos
+
+<tr>
+    <td>@AuditDto.Id</td>
+    <td>@AuditDto.UserId</td>
+    <td>@AuditDto.LoggedAt</td>
+    <td>@AuditDto.Action</td>
+    <td>
+        <button class="btn btn-sm btn-primary" @onclick="() => OnViewAudit.InvokeAsync(AuditDto)">View</button>
+    </td>
+</tr>
+
+@code {
+    [Parameter] public UserAuditDto AuditDto { get; set; } = default!;
+    [Parameter] public EventCallback<UserAuditDto> OnViewAudit { get; set; }
+}
