@@ -1,0 +1,24 @@
+<div>
+    <button class="btn btn-outline-primary me-2" @onclick="PrevPage" disabled="@IsFirstPage">Previous</button>
+    <span>Page @CurrentPage of @TotalPages</span>
+    <button class="btn btn-outline-primary ms-2" @onclick="NextPage" disabled="@IsLastPage">Next</button>
+</div>
+
+@code {
+    [Parameter] public int CurrentPage { get; set; } = 1;
+    [Parameter] public int TotalPages { get; set; } = 1;
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+
+    private bool IsFirstPage => CurrentPage <= 1;
+    private bool IsLastPage => CurrentPage >= TotalPages;
+
+    private async Task PrevPage() => await ChangePage(CurrentPage - 1);
+    private async Task NextPage() => await ChangePage(CurrentPage + 1);
+
+    private async Task ChangePage(int newPage)
+    {
+        if (newPage < 1 || newPage > TotalPages) return;
+        await OnPageChanged.InvokeAsync(newPage);
+    }
+
+}

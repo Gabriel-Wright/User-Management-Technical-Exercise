@@ -39,7 +39,7 @@ else
         </tbody>
     </table>
 
-
+    <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
 }
 <ViewAuditForm IsVisible="ShowAuditView" Audit="SelectedAuditDto" OnCloseAudit="CloseAuditModal" />
 
@@ -51,16 +51,29 @@ else
     private bool loading = true;
     private bool ShowAuditView = false;
     private string? errorMessage;
+    private int CurrentPage = 1;
+    private readonly int PageSize = 10;
+    private int TotalPages => TotalCount > 0
+    ? (int)Math.Ceiling((double)TotalCount / PageSize)
+    : 1;
+    private int TotalCount = 0;
+
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadAudits();
+    }
+
+    private async Task LoadAudits()
     {
         loading = true;
         errorMessage = null;
 
         try
         {
-            var result = await UserAuditService.GetAllAuditsAsync(page: 1, pageSize: 20);
+            var result = await UserAuditService.GetAllAuditsAsync(page: CurrentPage, pageSize: PageSize);
             audits = result.Items.ToList();
+            TotalCount = result.TotalCount;
         }
         catch (Exception ex)
         {
@@ -70,6 +83,13 @@ else
         {
             loading = false;
         }
+
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        CurrentPage = newPage;
+        await LoadAudits();
     }
 
     private void ShowAuditModal(UserAuditDto auditDto)

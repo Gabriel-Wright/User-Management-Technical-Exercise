@@ -9,8 +9,8 @@
 @inject IUserApiService UserService
 
 <h3>User List</h3>
-<UserSearchBar SearchTerm="@searchTerm" SearchTermChanged="@((val) => searchTerm = val)"
-    SelectedActiveOption="@selectedActiveOption" SelectedActiveOptionChanged="@((val) => selectedActiveOption = val)"
+<UserSearchBar SearchTerm="@SearchTerm" SearchTermChanged="@((val) => SearchTerm = val)"
+    SelectedActiveOption="@SelectedActiveOption" SelectedActiveOptionChanged="@((val) => SelectedActiveOption = val)"
     OnSearch="HandleSearch" />
 <button class="btn btn-sm btn-success mb-3" @onclick="ShowCreateUserModal">Add User</button>
 @switch (currentState)
@@ -45,15 +45,17 @@
                 }
             </tbody>
         </table>
-
-        <UserListPaginator CurrentPage="@currentPage" TotalPages="@TotalPages" SortField="@sortBy" Descending="@sortDescending"
-            OnPageChanged="HandlePageChanged" OnSortChanged="HandleSortChanged" />
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
+            <UserListSorter SortField="@SortBy" Descending="@SortDescending" OnSortChanged="HandleSortChanged" />
+        </div>
         break;
+
 }
-<ViewUserForm IsVisible="currentForm == VisibleForm.ViewUser" User="selectedViewUser" OnClose="CloseViewModal" />
-<DeleteUserForm IsVisible="currentForm == VisibleForm.DeleteUser" User="selectedDeleteUser" OnClose="CloseDeleteModal"
+<ViewUserForm IsVisible="currentForm == VisibleForm.ViewUser" User="SelectedViewUser" OnClose="CloseViewModal" />
+<DeleteUserForm IsVisible="currentForm == VisibleForm.DeleteUser" User="SelectedDeleteUser" OnClose="CloseDeleteModal"
     OnDeleted="HandleUserDeleted" />
-<EditUserForm IsVisible="currentForm == VisibleForm.EditUser" User="selectedEditUser" OnClose="CloseEditModal"
+<EditUserForm IsVisible="currentForm == VisibleForm.EditUser" User="SelectedEditUser" OnClose="CloseEditModal"
     OnUpdated="HandleUserUpdated" />
 <CreateUserForm IsVisible="currentForm == VisibleForm.CreateUser" OnClose="CloseCreateUserModal"
     OnCreated="HandleUserCreated" />
@@ -76,51 +78,51 @@
 
     private VisibleForm currentForm = VisibleForm.None;
 
-    private UserDto? selectedViewUser;
-    private UserDto? selectedDeleteUser;
-    private UserDto? selectedEditUser;
+    private UserDto? SelectedViewUser;
+    private UserDto? SelectedDeleteUser;
+    private UserDto? SelectedEditUser;
 
     //Search and pagination
-    private string searchTerm = "";
-    private string selectedActiveOption = "";
-    private int currentPage = 1;
-    private int pageSize = 10;
-    private int TotalPages => totalCount > 0
-    ? (int)Math.Ceiling((double)totalCount / pageSize)
+    private string SearchTerm = "";
+    private string SelectedActiveOption = "";
+    private int CurrentPage = 1;
+    private int PageSize = 10;
+    private int TotalPages => TotalCount > 0
+    ? (int)Math.Ceiling((double)TotalCount / PageSize)
     : 1;
-    private int totalCount = 0;
-    private string sortBy = "id";
-    private bool sortDescending = false;
+    private int TotalCount = 0;
+    private string SortBy = "id";
+    private bool SortDescending = false;
 
     //Modal / Form display methods
 
     private void ShowUserViewModal(UserDto user)
     {
         currentForm = VisibleForm.ViewUser;
-        selectedViewUser = user;
+        SelectedViewUser = user;
     }
 
     private void CloseViewModal()
     {
         currentForm = VisibleForm.None;
-        selectedViewUser = null;
+        SelectedViewUser = null;
     }
 
     private void ShowUserDeleteModal(UserDto user)
     {
         currentForm = VisibleForm.DeleteUser;
-        selectedDeleteUser = user;
+        SelectedDeleteUser = user;
     }
 
     private void CloseDeleteModal()
     {
         currentForm = VisibleForm.None;
-        selectedDeleteUser = null;
+        SelectedDeleteUser = null;
     }
 
     private void ShowUserEditModal(UserDto user)
     {
-        selectedEditUser = user;
+        SelectedEditUser = user;
         currentForm = VisibleForm.EditUser;
     }
 
@@ -132,7 +134,7 @@
     private void CloseEditModal()
     {
         CloseForm();
-        selectedEditUser = null;
+        SelectedEditUser = null;
     }
 
     private void ShowCreateUserModal()
@@ -155,28 +157,28 @@
     //
     private async Task HandleSearch((string? searchTerm, bool? isActive) args)
     {
-        searchTerm = args.searchTerm ?? "";
-        selectedActiveOption = args.isActive switch
+        SearchTerm = args.searchTerm ?? "";
+        SelectedActiveOption = args.isActive switch
         {
             true => "true",
             false => "false",
             null => ""
         };
-        currentPage = 1; //reset to first page
+        CurrentPage = 1; //reset to first page
         await LoadUsers();
     }
 
     private async Task HandlePageChanged(int newPage)
     {
-        currentPage = newPage;
+        CurrentPage = newPage;
         await LoadUsers();
     }
 
     private async Task HandleSortChanged((string sortBy, bool sortDesc) args)
     {
-        sortBy = args.sortBy;
-        sortDescending = args.sortDesc;
-        currentPage = 1;
+        SortBy = args.sortBy;
+        SortDescending = args.sortDesc;
+        CurrentPage = 1;
         await LoadUsers();
     }
 
@@ -189,17 +191,17 @@
             loadErrorMessage = null;
 
             var result = await UserService.GetUsersByQueryAsync(
-            searchTerm: searchTerm,
+            searchTerm: SearchTerm,
             isActive: GetIsActiveFilter(),
-            page: currentPage,
-            pageSize: pageSize,
-            sortBy: sortBy,
-            sortDescending: sortDescending
+            page: CurrentPage,
+            pageSize: PageSize,
+            sortBy: SortBy,
+            sortDescending: SortDescending
             );
 
             users = result.Users;
-            totalCount = result.TotalCount;
-            currentState = totalCount == 0 ? UserListState.Empty : UserListState.Data;
+            TotalCount = result.TotalCount;
+            currentState = TotalCount == 0 ? UserListState.Empty : UserListState.Data;
         }
         catch (UserApiException ex)
         {
@@ -210,7 +212,7 @@
                 Console.Error.WriteLine(ex.InnerException);
 
             users = new List<UserDto>();
-            totalCount = 0;
+            TotalCount = 0;
             currentState = UserListState.Error;
         }
         catch (Exception ex)
@@ -220,13 +222,13 @@
             Console.Error.WriteLine(ex.StackTrace);
 
             users = new List<UserDto>();
-            totalCount = 0;
+            TotalCount = 0;
             currentState = UserListState.Error;
         }
     }
     private bool? GetIsActiveFilter()
     {
-        return selectedActiveOption switch
+        return SelectedActiveOption switch
         {
             "true" => true,
             "false" => false,
@@ -239,9 +241,9 @@
     private async Task HandleUserDeleted(UserDto deleted)
     {
         await LoadUsers();
-        if ((users == null || !users.Any()) && currentPage > 1)
+        if ((users == null || !users.Any()) && CurrentPage > 1)
         {
-            currentPage--;
+            CurrentPage--;
         }
         await LoadUsers();
         CloseDeleteModal();
