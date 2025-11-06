@@ -63,7 +63,8 @@
 <CreateUserForm IsVisible="currentForm == VisibleForm.CreateUser" OnClose="CloseCreateUserModal"
     OnCreated="HandleUserCreated" />
 <ViewUserAuditsForm IsVisible="currentForm == VisibleForm.ViewUserAudit" User="SelectedViewUserAudit" Audits="audits"
-    OnClose="CloseViewUserAuditModal" ErrorMessage="@AuditLoadErrorMessage" />
+    OnClose="CloseViewUserAuditModal" ErrorMessage="@AuditLoadErrorMessage" CurrentPage="@AuditCurrentPage"
+    TotalPages="@AuditTotalPages" OnPageChanged="HandleAuditPageChanged" />
 
 @code {
     //State for how the List will be viewed
@@ -91,7 +92,7 @@
     private UserDto? SelectedDeleteUser;
     private UserDto? SelectedEditUser;
 
-    //Search and pagination
+    //User Search and pagination
     private string SearchTerm = "";
     private string SelectedActiveOption = "";
     private int CurrentPage = 1;
@@ -102,6 +103,14 @@
     private int TotalCount = 0;
     private string SortBy = "id";
     private bool SortDescending = false;
+
+    //Decided it is better to have the pagination here -service calls from page, as opposed to
+    //Pagination in Audit History Form - Service calls in there.
+    //Audit Pagination
+    private int AuditCurrentPage = 1;
+    private int AuditPageSize = 5;
+    private int AuditTotalPages = 1;
+    private int AuditTotalCount = 0;
 
     //Modal / Form display methods
 
@@ -122,12 +131,23 @@
         SelectedViewUserAudit = user;
         AuditLoadErrorMessage = null;
         audits = new List<UserAuditDto>();
+        AuditCurrentPage = 1;
 
+        await LoadUserAudits(SelectedViewUserAudit.Id, AuditCurrentPage);
+        currentForm = VisibleForm.ViewUserAudit;
+    }
+    private async Task LoadUserAudits(long userId, int auditCurrentPage)
+    {
         try
         {
-            var result = await UserAuditApiService.GetAuditsByUserAsync(user.Id, page: 1, pageSize: 50);
+            var result = await UserAuditApiService.GetAuditsByUserAsync(userId, page: auditCurrentPage, pageSize: AuditPageSize);
             audits = result.Items;
-            Console.WriteLine($"Loaded {audits.Count} audits for user {user.Id}");
+            AuditTotalCount = result.TotalCount;
+            AuditTotalPages = AuditTotalCount > 0
+            ? (int)Math.Ceiling((double)AuditTotalCount / AuditPageSize)
+            : 1;
+
+            Console.WriteLine($"Loaded {audits.Count} audits (page {auditCurrentPage}/{AuditTotalPages}) for user {userId}");
         }
         catch (UserApiException ex)
         {
@@ -137,14 +157,14 @@
         {
             AuditLoadErrorMessage = $"Unexpected error loading audit history: {ex.Message}";
         }
-        finally
-        {
-            currentForm = VisibleForm.ViewUserAudit;
-        }
     }
 
-
-
+    private async Task HandleAuditPageChanged(int newPage)
+    {
+        if (SelectedViewUserAudit == null) return;
+        AuditCurrentPage = newPage;
+        await LoadUserAudits(SelectedViewUserAudit.Id, AuditCurrentPage);
+    }
     private void CloseViewUserAuditModal()
     {
         currentForm = VisibleForm.None;

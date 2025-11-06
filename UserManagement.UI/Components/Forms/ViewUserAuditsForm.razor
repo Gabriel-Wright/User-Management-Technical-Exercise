@@ -49,6 +49,9 @@
                                         }
                                     </tbody>
                                 </table>
+                                <div class="d-flex justify-content-center mt-3">
+                                    <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="OnPageChanged" />
+                                </div>
                             }
                         </div>
                         <div class="modal-footer">
@@ -76,10 +79,9 @@
     private UserAuditDto? SelectedAudit { get; set; }
     [Parameter] public UserDto? User { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
-    @* private int CurrentPage = 1;
-    private readonly int PageSize = 5;
-    private int TotalCount; *@
-
+    [Parameter] public int CurrentPage { get; set; }
+    [Parameter] public int TotalPages { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
     private void ShowAuditModal(UserAuditDto userAuditDto)
     {
         SelectedAudit = userAuditDto;
