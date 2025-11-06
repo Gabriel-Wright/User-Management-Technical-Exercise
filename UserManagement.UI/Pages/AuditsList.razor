@@ -1,59 +1,62 @@
 @page "/audits"
 @using UserManagement.UI.Dtos
+@using UserManagement.UI.Exceptions
 @using UserManagement.UI.Services
 @using UserManagement.UI.Components
 
 @inject IUserAuditApiService UserAuditService
 
 <h3>User Audits</h3>
+@switch (CurrentState)
+{
+    case AuditListState.Loading:
+        <p>Loading audits...</p>
+        break;
+    case AuditListState.Error:
+        <div class="alert alert-danger">@LoadErrorMessage</div>
+        break;
+    case AuditListState.Empty:
+        <p>No audits found.</p>
 
-@if (loading)
-{
-    <p>Loading audits...</p>
-}
-else if (errorMessage != null)
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-else if (audits?.Any() != true)
-{
-    <p>No audits found.</p>
-}
-else
-{
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Audit Id</th>
-                <th>Affected User Id</th>
-                <th>Logged At</th>
-                <th>User Action</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var audit in audits!)
-            {
-                <UserAuditRow AuditDto="audit" OnViewAudit="ShowAuditModal" />
-            }
-        </tbody>
-    </table>
+        break;
+    case AuditListState.Data:
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Audit Id</th>
+                    <th>Affected User Id</th>
+                    <th>Logged At</th>
+                    <th>User Action</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var audit in Audits!)
+                {
+                    <UserAuditRow AuditDto="audit" OnViewAudit="ShowAuditModal" />
+                }
+            </tbody>
+        </table>
 
-    <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
+        <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
+
+        @if (ShowAuditView)
+        {
+            <ViewAuditForm Audit="SelectedAuditDto" OnCloseAudit="CloseAuditModal" />
+        }
+
+        break;
 }
 
-@if (ShowAuditView)
-{
-    <ViewAuditForm Audit="SelectedAuditDto" OnCloseAudit="CloseAuditModal" />
-}
+
 
 @code {
-    private List<UserAuditDto> audits = new();
+    private enum AuditListState { Loading, Error, Empty, Data }
+    private AuditListState CurrentState = AuditListState.Loading;
+    private List<UserAuditDto> Audits = new();
     private UserAuditDto? SelectedAuditDto;
-
-    private bool loading = true;
     private bool ShowAuditView = false;
-    private string? errorMessage;
+    private string? LoadErrorMessage;
     private int CurrentPage = 1;
     private readonly int PageSize = 10;
     private int TotalPages => TotalCount > 0
@@ -69,24 +72,40 @@ else
 
     private async Task LoadAudits()
     {
-        loading = true;
-        errorMessage = null;
+        CurrentState = AuditListState.Loading;
+        LoadErrorMessage = null;
 
         try
         {
             var result = await UserAuditService.GetAllAuditsAsync(page: CurrentPage, pageSize: PageSize);
-            audits = result.Items.ToList();
+            Audits = result.Items.ToList();
             TotalCount = result.TotalCount;
+            CurrentState = result.TotalCount > 0
+            ? AuditListState.Data
+            : AuditListState.Empty;
+        }
+        catch (UserApiException ex)
+        {
+            LoadErrorMessage = ex.Message;
+
+            Console.Error.WriteLine($"API Error: {ex.Message}");
+            if (ex.InnerException != null)
+                Console.Error.WriteLine(ex.InnerException);
+            Audits = new List<UserAuditDto>();
+            TotalCount = 0;
+            CurrentState = AuditListState.Error;
+
         }
         catch (Exception ex)
         {
-            errorMessage = "Error loading audits: " + ex.Message;
-        }
-        finally
-        {
-            loading = false;
-        }
+            LoadErrorMessage = "Unexpected Internal Error when fetching users.";
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+            Console.Error.WriteLine(ex.StackTrace);
+            Audits = new List<UserAuditDto>();
+            TotalCount = 0;
+            CurrentState = AuditListState.Error;
 
+        }
     }
 
     private async Task HandlePageChanged(int newPage)

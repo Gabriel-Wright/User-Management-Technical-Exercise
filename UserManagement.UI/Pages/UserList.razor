@@ -53,30 +53,33 @@
             <Paginator CurrentPage="CurrentPage" TotalPages="TotalPages" OnPageChanged="HandlePageChanged" />
             <UserListSorter SortField="@SortBy" Descending="@SortDescending" OnSortChanged="HandleSortChanged" />
         </div>
+        @switch (currentForm)
+        {
+            case VisibleForm.None:
+                break;
+            case VisibleForm.ViewUser:
+                <ViewUserForm User="SelectedViewUser" OnClose="CloseViewModal" />
+                break;
+            case VisibleForm.DeleteUser:
+                <DeleteUserForm User="SelectedDeleteUser" OnClose="CloseDeleteModal" OnDeleted="HandleUserDeleted" />
+                break;
+            case VisibleForm.EditUser:
+                <EditUserForm User="SelectedEditUser" OnClose="CloseEditModal" OnUpdated="HandleUserUpdated" />
+                break;
+            case VisibleForm.CreateUser:
+                <CreateUserForm OnClose="CloseCreateUserModal" OnCreated="HandleUserCreated" />
+                break;
+            case VisibleForm.ViewUserHistory:
+                <ViewUserHistoryForm User="SelectedViewUserAudit" Audits="audits" OnClose="CloseViewUserAuditModal"
+                    ErrorMessage="@AuditLoadErrorMessage" CurrentPage="@AuditCurrentPage" TotalPages="@AuditTotalPages"
+                    OnPageChanged="HandleAuditPageChanged" />
+                break;
+        }
         break;
 
-}
-@switch (currentForm)
-{
-    case VisibleForm.None:
-        break;
-    case VisibleForm.ViewUser:
-        <ViewUserForm User="SelectedViewUser" OnClose="CloseViewModal" />
-        break;
-    case VisibleForm.DeleteUser:
-        <DeleteUserForm User="SelectedDeleteUser" OnClose="CloseDeleteModal" OnDeleted="HandleUserDeleted" />
-        break;
-    case VisibleForm.EditUser:
-        <EditUserForm User="SelectedEditUser" OnClose="CloseEditModal" OnUpdated="HandleUserUpdated" />
-        break;
-    case VisibleForm.CreateUser:
-        <CreateUserForm OnClose="CloseCreateUserModal" OnCreated="HandleUserCreated" />
-        break;
-    case VisibleForm.ViewUserHistory:
-        <ViewUserHistoryForm User="SelectedViewUserAudit" Audits="audits" OnClose="CloseViewUserAuditModal"
-            ErrorMessage="@AuditLoadErrorMessage" CurrentPage="@AuditCurrentPage" TotalPages="@AuditTotalPages"
-            OnPageChanged="HandleAuditPageChanged" />
-        break;
+
+
+
 
 }
 
@@ -262,7 +265,6 @@
     private async Task LoadUsers()
     {
         currentState = UserListState.Loading;
-        //Could handle this better
         try
         {
             loadErrorMessage = null;
