@@ -1,5 +1,8 @@
+using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Serilog;
 using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web;
@@ -21,6 +24,7 @@ public class UserAuditsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllAudits([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
+        Log.Information("Feching all audits for page {page} of size {size}", page, pageSize);
         (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAllUserAudits(page, pageSize);
 
         if (audits == null || !audits.Any())
@@ -33,7 +37,6 @@ public class UserAuditsController : ControllerBase
             PageNumber = page,
             PageSize = pageSize
         };
-
         return Ok(result);
     }
 
@@ -43,6 +46,8 @@ public class UserAuditsController : ControllerBase
     [HttpGet("{userId:long}")]
     public async Task<IActionResult> GetUserAudits(long userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
+        Log.Information("Feching all audits for user of Id {id} for page {page} of size {size}", userId, page, pageSize);
+
         if (userId <= 0)
             return BadRequest("Invalid user ID.");
 
