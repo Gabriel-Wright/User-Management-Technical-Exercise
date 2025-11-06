@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Data;
 using UserManagement.Models;
 using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Implementations;
+using UserManagement.Services.Events;
+using UserMangement.Services.Events;
 
 namespace UserManagement.Services.Tests;
 
@@ -24,7 +25,7 @@ public class UserServiceTests
     public async Task GetAllAsync_ShouldReturnAllUsers()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
         var result = await service.GetAllAsync();
 
         result.Should().HaveCount(0);
@@ -43,7 +44,7 @@ public class UserServiceTests
     public async Task GetUsersAsync_NoMatches_ShouldReturnEmptyList()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -58,7 +59,7 @@ public class UserServiceTests
     public async Task GetUsersAsync_FilterSearchByTerm_ShouldFindResults()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -79,7 +80,7 @@ public class UserServiceTests
     public async Task GetUsersAsync_FilterSearchByTermAndActive_ShouldFindOneResults()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -107,7 +108,7 @@ public class UserServiceTests
         //Hagrid IDK
         //Hermione Granger <- Last
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -123,7 +124,7 @@ public class UserServiceTests
     public async Task GetUsersAsync_InvalidPageOrPageSize_ShouldUseDefaults()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -138,7 +139,7 @@ public class UserServiceTests
     public async Task GetAllAsync_WhenNoUsers_ShouldReturnEmptyList()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
         var result = await service.GetAllAsync();
 
         result.Should().BeEmpty();
@@ -148,7 +149,7 @@ public class UserServiceTests
     public async Task GetUsersAsync_WithSmallPage_ShouldReturnTwoUsers()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -171,7 +172,7 @@ public class UserServiceTests
     public async Task GetUsersAsync_WithSmallPageThirdPage_ShouldReturnOneUsers()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddFiveTestUsers(context);
         await service.SaveAsync();
@@ -193,7 +194,7 @@ public class UserServiceTests
     public async Task FilterByActiveAsync_WhenActiveTrue_ShouldReturnOnlyActiveUsers()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -209,7 +210,7 @@ public class UserServiceTests
     public async Task GetByIdAsync_WhenUserExists_ShouldReturnUser()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -225,7 +226,7 @@ public class UserServiceTests
     public async Task GetByIdAsync_WhenUserDoesNotExist_ShouldReturnNull()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         var result = await service.GetByIdAsync(1);
 
@@ -238,7 +239,7 @@ public class UserServiceTests
     {
 
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -254,7 +255,7 @@ public class UserServiceTests
     public async Task GetByNameAsync_ShouldBeCaseInsensitive()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -271,7 +272,7 @@ public class UserServiceTests
     public async Task GetByNameAsync_WhenForenameEmpty_ShouldThrowArgumentException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -286,7 +287,7 @@ public class UserServiceTests
     public async Task GetByNameAsync_WhenNoMatch_ShouldReturnEmptyList()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         var result = await service.GetByNameAsync("Mrs", "Tumble");
 
@@ -298,7 +299,7 @@ public class UserServiceTests
     public async Task AddUserAsync_WithValidUser_ShouldAddUser()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         var newUser = new User
         {
@@ -325,7 +326,7 @@ public class UserServiceTests
     public async Task AddUserAsync_WithDuplicateEmail_ShouldThrowInvalidOperationException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -350,7 +351,7 @@ public class UserServiceTests
     public async Task AddUserAsync_WithInvalidEmail_ShouldThrowValidationException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         // Arrange
         var invalidUser = new User
@@ -374,7 +375,7 @@ public class UserServiceTests
     public async Task AddUserAsync_WithMissingForename_ShouldThrowValidationException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         // Arrange
         var invalidUser = new User
@@ -398,7 +399,7 @@ public class UserServiceTests
     public async Task UpdateUserAsync_WithValidChanges_ShouldUpdateUser()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -426,7 +427,7 @@ public class UserServiceTests
     public async Task UpdateUserAsync_WhenUserDoesNotExist_ShouldThrowKeyNotFoundException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         // Arrange
         var nonExistentUser = new User
@@ -452,7 +453,7 @@ public class UserServiceTests
     public async Task UpdateUserAsync_WithInvalidData_ShouldThrowValidationException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -469,7 +470,7 @@ public class UserServiceTests
     public async Task DeleteUserAsync_WhenUserExists_ShouldDeleteUser()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -490,7 +491,7 @@ public class UserServiceTests
     public async Task DeleteUserAsync_WhenUserDoesNotExist_ShouldThrowKeyNotFoundException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -506,7 +507,7 @@ public class UserServiceTests
     {
         // Arrange
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -533,7 +534,7 @@ public class UserServiceTests
     public async Task SoftDeleteUserAsync_WhenUserDoesNotExist_ShouldThrowKeyNotFoundException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         await AddTestUsers(context);
         await service.SaveAsync();
@@ -549,7 +550,7 @@ public class UserServiceTests
     public async Task AddUserAsync_WithBirthDateTooYoung_ShouldThrowValidationException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         var newUser = new User
         {
@@ -571,7 +572,7 @@ public class UserServiceTests
     public async Task AddUserAsync_WithBirthDateTooOld_ShouldThrowValidationException()
     {
         var context = CreateContext();
-        var service = new UserService(context);
+        var service = CreateUserService(context);
 
         var newUser = new User
         {
@@ -587,6 +588,36 @@ public class UserServiceTests
 
         await act.Should().ThrowAsync<ValidationException>()
             .WithMessage("User cannot be older than 120 years.");
+    }
+
+    //Checking create method does fire off expected event
+    [Fact]
+    public async Task AddUserAsync_ShouldPublishUserCreatedEvent()
+    {
+        var context = CreateContext();
+        var mockEventBus = new Mock<IEventBus>();
+        var service = new UserService(context, mockEventBus.Object);
+
+        var newUser = new User
+        {
+            Forename = "Event",
+            Surname = "Man",
+            Email = "MrEvent@Yahoo.com",
+            Role = UserRole.User,
+            IsActive = true,
+            BirthDate = DateTime.Today.AddYears(-25)
+        };
+
+        var result = await service.AddUserAsync(newUser);
+
+        mockEventBus.Verify(
+            bus => bus.PublishAsync(It.Is<UserCreatedEvent>(evt =>
+                evt.UserId == result.Id &&
+                evt.User.Email == newUser.Email &&
+                evt.User.Forename == newUser.Forename
+            )),
+            Times.Once
+        );
     }
 
     ///   ====================
@@ -679,5 +710,11 @@ public class UserServiceTests
             Email = "groundskeeper@currys.com",
             IsActive = false
         });
+    }
+
+    private UserService CreateUserService(DataContext context)
+    {
+        var mockEventBus = new Mock<IEventBus>();
+        return new UserService(context, mockEventBus.Object);
     }
 }

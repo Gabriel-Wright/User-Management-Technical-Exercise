@@ -8,7 +8,9 @@ using Serilog;
 using UserManagement.Data;
 using UserManagement.Models;
 using UserManagement.Services.Domain.Interfaces;
+using UserManagement.Services.Events;
 using UserManagement.Services.Mappers;
+using UserMangement.Services.Events;
 
 namespace UserManagement.Services.Domain.Implementations;
 /// <summary>
@@ -24,8 +26,12 @@ namespace UserManagement.Services.Domain.Implementations;
 public class UserService : IUserService
 {
     private readonly IDataContext _dataAccess;
-    public UserService(IDataContext dataAccess) => _dataAccess = dataAccess;
-
+    private readonly IEventBus _eventBus;
+    public UserService(IDataContext dataAccess, IEventBus eventBus)
+    {
+        _dataAccess = dataAccess;
+        _eventBus = eventBus;
+    }
     public async Task<IEnumerable<User>> GetAllAsync()
     {
         Log.Debug("Fetching all Users from DB.");
@@ -135,6 +141,13 @@ public class UserService : IUserService
         Log.Information("Adding user {Id}, {Forename} {Surname} to DB", user.Id, user.Forename, user.Surname);
         var userEntity = UserMapper.ToUserEntity(user);
         await _dataAccess.CreateAsync(userEntity);
+        await SaveAsync();
+
+        await _eventBus.PublishAsync(new UserCreatedEvent
+        {
+            UserId = userEntity.Id,
+            User = user
+        });
 
         return UserMapper.ToDomainUser(userEntity);
     }

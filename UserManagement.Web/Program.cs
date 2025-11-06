@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using UserManagement.Data;
+using UserManagement.Services.Domain.Implementations;
+using UserManagement.Services.Events;
+using UserMangement.Services.Events;
 
 namespace UserManagement.Web
 {
@@ -43,6 +46,11 @@ namespace UserManagement.Web
                     .AddDataAccess(builder.Configuration, builder.Environment)
                     .AddDomainServices()
                         .AddControllers();
+                builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
+
+                //Domain services
+                builder.Services.AddScoped<UserService>();
+                builder.Services.AddScoped<AuditService>();
                 //Adding Swagger so we can check Web APIs
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(c =>
@@ -85,6 +93,7 @@ namespace UserManagement.Web
                 app.UseAuthorization();
 
                 app.MapControllers();
+                ConfigureEventBusSubscriptions(app);
 
                 if (builder.Environment.IsDevelopment())
                 {
@@ -136,6 +145,15 @@ namespace UserManagement.Web
             Log.Fatal("No CORS origin configured or defined");
             throw new InvalidOperationException("No CORS origin configured for the current environment.");
         }
+        private static void ConfigureEventBusSubscriptions(WebApplication app)
+        {
+            var eventBus = app.Services.GetRequiredService<IEventBus>();
+            var auditService = app.Services.GetRequiredService<AuditService>();
+
+            eventBus.Subscribe<UserCreatedEvent>(auditService.Handle);
+        }
     }
+
+
 
 }

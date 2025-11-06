@@ -147,7 +147,6 @@ public class UsersController : ControllerBase
 
         var user = UserToUserCreateDtoMapper.ToUser(createDto);
         var createdUser = await _userService.AddUserAsync(user);
-        await _userService.SaveAsync();
 
         var resultDto = UserDtoMapper.ToDto(createdUser);
         return CreatedAtAction(nameof(GetUsersById), new { id = resultDto.Id }, resultDto);
