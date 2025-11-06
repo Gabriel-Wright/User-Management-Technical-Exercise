@@ -24,38 +24,38 @@ these forms apply that -> But I felt the extraarchitecture was a bit unncessary 
 
                         <div class="mb-3">
                             <label class="form-label">Forename</label>
-                            <InputText class="form-control" @bind-Value="NewUser.Forename" />
+                            <InputText id="forename" class="form-control" @bind-Value="NewUser.Forename" />
                             <ValidationMessage For="@(() => NewUser.Forename)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Surname</label>
-                            <InputText class="form-control" @bind-Value="NewUser.Surname" />
+                            <InputText id="surname" class="form-control" @bind-Value="NewUser.Surname" />
                             <ValidationMessage For="@(() => NewUser.Surname)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Email</label>
-                            <InputText class="form-control" @bind-Value="NewUser.Email" />
+                            <InputText id="email" class="form-control" @bind-Value="NewUser.Email" />
                             <ValidationMessage For="@(() => NewUser.Email)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <select class="form-select" @bind="NewUser.Role">
+                            <select id="role" class="form-select" @bind="NewUser.Role">
                                 <option value="0">User</option>
                                 <option value="1">Admin</option>
                             </select>
                         </div>
 
                         <div class="form-check mb-3">
-                            <InputCheckbox class="form-check-input" @bind-Value="NewUser.IsActive" />
+                            <InputCheckbox id="isActive" class="form-check-input" @bind-Value="NewUser.IsActive" />
                             <label class="form-check-label" for="isActive">Active</label>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Birth Date</label>
-                            <InputDate class="form-control" @bind-Value="NewUser.BirthDate"
+                            <InputDate id="birthday" class="form-control" @bind-Value="NewUser.BirthDate"
                                 min="@MinBirthDate.ToString("yyyy-MM-dd")" max="@MaxBirthDate.ToString("yyyy-MM-dd")" />
                             <ValidationMessage For="@(() => NewUser.BirthDate)" />
                         </div>
