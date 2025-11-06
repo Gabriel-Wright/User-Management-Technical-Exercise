@@ -43,14 +43,14 @@ namespace UserManagement.Data.Tests
         }
 
         [Fact]
-        public async Task GetAllAudits_WhenNoAuditsExist_ReturnsNotFound()
+        public async Task GetAllAudits_WhenNoAuditsExist_ReturnsOK()
         {
             _mockAuditService.Setup(s => s.GetAllUserAudits(1, 10))
                 .ReturnsAsync((new List<UserAudit>(), 0));
 
             var result = await _controller.GetAllAudits();
 
-            result.Should().BeOfType<NotFoundObjectResult>();
+            result.Should().BeOfType<OkObjectResult>();
         }
 
         [Fact]
@@ -85,14 +85,14 @@ namespace UserManagement.Data.Tests
         }
 
         [Fact]
-        public async Task GetUserAudits_WhenNoAuditsExist_ReturnsNotFound()
+        public async Task GetUserAuditsById_WhenNoAuditsExist_ReturnsOk()
         {
             _mockAuditService.Setup(s => s.GetAllUserAuditsById(1, 1, 10))
                 .ReturnsAsync((new List<UserAudit>(), 0));
 
             var result = await _controller.GetUserAudits(1);
 
-            result.Should().BeOfType<NotFoundObjectResult>();
+            result.Should().BeOfType<OkObjectResult>();
         }
     }
 }
