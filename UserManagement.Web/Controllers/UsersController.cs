@@ -141,6 +141,7 @@ public class UsersController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
+            //Could have more detail here
             Log.Warning("{@ModelState}", ModelState);
             return BadRequest("Invalid data used for creation.");
         }

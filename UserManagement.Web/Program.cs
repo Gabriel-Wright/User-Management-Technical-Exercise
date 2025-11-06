@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using UserManagement.Data;
 using UserManagement.Services.Domain.Implementations;
+using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Services.Events;
 using UserMangement.Services.Events;
 
@@ -49,9 +50,6 @@ namespace UserManagement.Web
                         .AddControllers();
                 builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
 
-                //Domain services
-                builder.Services.AddScoped<UserService>();
-                builder.Services.AddScoped<AuditService>();
                 //Adding Swagger so we can check Web APIs
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(c =>
@@ -163,10 +161,9 @@ namespace UserManagement.Web
                 });
             }
 
-            SubscribeScoped<UserCreatedEvent, AuditService>((service, evt) => service.Handle(evt));
-            SubscribeScoped<UserUpdatedEvent, AuditService>((service, evt) => service.Handle(evt));
-            SubscribeScoped<UserDeletedEvent, AuditService>((service, evt) => service.Handle(evt));
-
+            SubscribeScoped<UserCreatedEvent, IAuditService>((service, evt) => service.Handle(evt));
+            SubscribeScoped<UserUpdatedEvent, IAuditService>((service, evt) => service.Handle(evt));
+            SubscribeScoped<UserDeletedEvent, IAuditService>((service, evt) => service.Handle(evt));
         }
     }
 

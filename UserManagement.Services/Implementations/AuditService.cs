@@ -6,12 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using UserManagement.Data;
 using UserManagement.Models;
+using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Services.Mappers;
 using UserMangement.Services.Events;
 
 namespace UserManagement.Services.Domain.Implementations
 {
-    public class AuditService
+    public class AuditService : IAuditService
     {
         private readonly IDataContext _dataContext;
 
