@@ -17,6 +17,5 @@ public class UserEntity
     public string UserRole { get; set; } = "User";
     public bool IsActive { get; set; }
     public DateTime BirthDate { get; set; }
-    // //have this set as a bool
     public bool Deleted { get; set; } = false;
 }

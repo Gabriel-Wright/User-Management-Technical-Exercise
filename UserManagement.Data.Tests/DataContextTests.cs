@@ -85,37 +85,109 @@ public class DataContextTests
     }
 
     [Fact]
-    public async Task AuditEntity_ShouldBePersisted()
+    public async Task CreateAudit_WhenNewAuditAdded_ShouldBePersisted()
     {
         var context = CreateContext();
-        var audit = new AuditEntity { EntityId = 1, AuditAction = "Created" };
+        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
+        await context.CreateAsync(user);
+        await context.SaveChangesAsync();
+
+        var audit = new UserAuditEntity
+        {
+            UserEntityId = user.Id,
+            AuditAction = "Created"
+        };
 
         await context.CreateAsync(audit);
         await context.SaveChangesAsync();
 
-        var result = await context.GetAll<AuditEntity>().FirstAsync();
-        result.EntityId.Should().Be(1);
+        var result = context.GetAll<UserAuditEntity>().FirstOrDefault();
+        result.Should().NotBeNull();
+        result!.UserEntityId.Should().Be(user.Id);
         result.AuditAction.Should().Be("Created");
+        result.LoggedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
     public async Task AuditEntity_WhenDeleted_MustNotIncludeEntity()
     {
         var context = CreateContext();
-        var audit = new AuditEntity { EntityId = 1, AuditAction = "Created" };
+        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
+        await context.CreateAsync(user);
+        await context.SaveChangesAsync();
+
+        var audit = new UserAuditEntity
+        {
+            UserEntityId = user.Id,
+            AuditAction = "Created"
+        };
 
         await context.CreateAsync(audit);
         await context.SaveChangesAsync();
 
-        var result = await context.GetAll<AuditEntity>().ToListAsync();
+        var result = await context.GetAll<UserAuditEntity>().ToListAsync();
         result.Should().ContainSingle(u => u.AuditAction == audit.AuditAction)
                   .Which.AuditAction.Should().Be("Created");
 
 
         context.Delete(audit);
         await context.SaveChangesAsync();
-        var audits = context.GetAll<AuditEntity>();
-        audits.Should().NotContain(a => a.EntityId == 1);
+        var audits = context.GetAll<UserAuditEntity>();
+        audits.Should().NotContain(a => a.Id == 1);
+    }
+
+    [Fact]
+    public async Task CreateAuditChange_ShouldPersistAndLinkToAudit()
+    {
+        var context = CreateContext();
+        var user = new UserEntity { Forename = "Change", Surname = "Test", Email = "change@test.com" };
+        await context.CreateAsync(user);
+        await context.SaveChangesAsync();
+
+        var audit = new UserAuditEntity { UserEntityId = user.Id, AuditAction = "Updated" };
+        await context.CreateAsync(audit);
+        await context.SaveChangesAsync();
+
+        var change = new UserAuditChangeEntity
+        {
+            AuditId = audit.Id,
+            Field = "Surname",
+            Before = "Test",
+            After = "Updated"
+        };
+        await context.CreateAsync(change);
+        await context.SaveChangesAsync();
+
+        var loadedChange = context.GetAll<UserAuditChangeEntity>()
+                                  .Include(c => c.Audit)
+                                  .First();
+        loadedChange.Audit.Should().NotBeNull();
+        loadedChange.Audit.Id.Should().Be(audit.Id);
+        loadedChange.Before.Should().Be("Test");
+        loadedChange.After.Should().Be("Updated");
+    }
+
+    [Fact]
+    public async Task AuditNavigationProperty_ShouldLinkToUserEntity()
+    {
+        var context = CreateContext();
+        var user = new UserEntity { Forename = "Nav", Surname = "Test", Email = "nav@test.com" };
+        await context.CreateAsync(user);
+        await context.SaveChangesAsync();
+
+        var audit = new UserAuditEntity
+        {
+            UserEntityId = user.Id,
+            AuditAction = "Updated"
+        };
+        await context.CreateAsync(audit);
+        await context.SaveChangesAsync();
+
+        var loadedAudit = context.GetAll<UserAuditEntity>()
+                                 .Include(a => a.UserEntity)
+                                 .First();
+        loadedAudit.UserEntity.Should().NotBeNull();
+        loadedAudit.UserEntity.Email.Should().Be(user.Email);
     }
 
     //

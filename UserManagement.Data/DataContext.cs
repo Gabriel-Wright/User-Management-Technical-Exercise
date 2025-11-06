@@ -49,7 +49,8 @@ public class DataContext : DbContext, IDataContext
     }
     public DbSet<UserEntity>? Users { get; set; }
 
-    public DbSet<AuditEntity>? Audits { get; set; }
+    public DbSet<UserAuditEntity>? Audits { get; set; }
+    public DbSet<UserAuditChangeEntity>? AuditChanges { get; set; }
 
     public IQueryable<TEntity> GetAll<TEntity>() where TEntity : class
         => base.Set<TEntity>();

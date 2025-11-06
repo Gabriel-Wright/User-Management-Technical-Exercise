@@ -4,17 +4,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace UserManagement.Models;
 
-public class AuditEntity
+public class UserAuditEntity
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public long Id { get; set; }
-    // dont think we need navigation property here - what if the entity is deleted
     [Required]
-    public long EntityId { get; set; }
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public long UserEntityId { get; set; }//Foreign Key Column
+
+    [ForeignKey("UserEntityId")]
+    public UserEntity UserEntity { get; set; } = default!;
+    [Required]
+    public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
     [Required]
     public String AuditAction { get; set; } = default!;
-    [MaxLength(100)]
-    public string? ChangedBy { get; set; }
-    public string? Changes { get; set; }
 }
