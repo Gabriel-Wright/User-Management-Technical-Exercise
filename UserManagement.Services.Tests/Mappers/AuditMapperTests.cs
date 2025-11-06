@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UserManagement.Models;
 using UserManagement.Services.Domain;
 using UserManagement.Services.Mappers;
@@ -6,51 +8,84 @@ using UserManagement.Services.Mappers;
 public class AuditMapperTests
 {
     [Fact]
-    public void MapToDomainAudit_ShouldConvertAuditEntityToDomainAudit()
+    public void MapToDomainAudit_WhenNoAuditChanges_ShouldConvertAuditEntityToDomainAudit()
     {
-        var auditEntity = new AuditEntity
+        var auditEntity = new UserAuditEntity
         {
             Id = 1,
-            EntityId = 100,
-            Timestamp = new DateTime(2023, 1, 1),
-            AuditAction = "Created",
-            ChangedBy = "Greg Heffley",
-            Changes = "Initial creation"
+            UserEntityId = 100,
+            LoggedAt = new DateTime(2023, 1, 1),
+            AuditAction = "Deleted",
         };
 
-        var audit = AuditMapper.ToUserEntity(auditEntity);
+
+
+        var audit = UserAuditMapper.ToDomainAudit(auditEntity, null);
 
         // Assert
         audit.Id.Should().Be(1);
-        audit.EntityId.Should().Be(100);
-        audit.Timestamp.Should().Be(new DateTime(2023, 1, 1));
-        audit.Action.Should().Be(AuditAction.Created);
-        audit.ChangedBy.Should().Be("Greg Heffley");
-        audit.Changes.Should().Be("Initial creation");
+        audit.UserId.Should().Be(100);
+        audit.LoggedAt.Should().Be(new DateTime(2023, 1, 1));
+        audit.Action.Should().Be(AuditAction.Deleted);
+        audit.Changes.Should().BeEmpty();
     }
 
     [Fact]
-    public void MapToEntity_ShouldConvertDomainAuditToAuditEntity()
+    public void MapToDomainAudit_WhenAuditChanges_ShouldConvertAuditEntityToDomainAudit()
     {
-        var audit = new Audit
+        var auditEntity = new UserAuditEntity
         {
-            Id = 2,
-            EntityId = 200,
-            Timestamp = new DateTime(2024, 2, 2),
-            Action = AuditAction.Updated,
-            ChangedBy = "Rodrick Heffley",
-            Changes = "Updated email"
+            Id = 1,
+            UserEntityId = 100,
+            LoggedAt = new DateTime(2023, 1, 1),
+            AuditAction = "Deleted",
         };
 
-        var auditEntity = AuditMapper.ToAuditEntity(audit);
+        var auditChangeEntity = new UserAuditChangeEntity
+        {
+            Id = 1,
+            AuditId = 1,
+            Field = "Forename",
+            Before = "Jonty",
+            After = "Jon"
+        };
+
+        var auditChanges = new List<UserAuditChangeEntity> { auditChangeEntity };
+
+        // Act
+        var audit = UserAuditMapper.ToDomainAudit(auditEntity, auditChanges);
 
         // Assert
-        auditEntity.Id.Should().Be(2);
-        auditEntity.EntityId.Should().Be(200);
-        auditEntity.Timestamp.Should().Be(new DateTime(2024, 2, 2));
-        auditEntity.AuditAction.Should().Be("Updated");
-        auditEntity.ChangedBy.Should().Be("Rodrick Heffley");
-        auditEntity.Changes.Should().Be("Updated email");
+        audit.Id.Should().Be(1);
+        audit.UserId.Should().Be(100);
+        audit.LoggedAt.Should().Be(new DateTime(2023, 1, 1));
+        audit.Action.Should().Be(AuditAction.Deleted);
+
+        // Check field-level change
+        var fieldChange = audit.Changes!.First().Change;
+        fieldChange.FieldName.Should().Be(UserField.Forename);
+        fieldChange.Before.Should().Be("Jonty");
+        fieldChange.After.Should().Be("Jon");
     }
+
+    [Fact]
+    public void MapToDomainAuditChange_ShouldConverAuditChangeEntity()
+    {
+        var auditChangeEntity = new UserAuditChangeEntity
+        {
+            Id = 1,
+            AuditId = 1,
+            Field = "Forename",
+            Before = "Jonty",
+            After = "Jon"
+        };
+
+        var auditChange = UserAuditMapper.ToDomainAuditChange(auditChangeEntity);
+        auditChange.AuditId.Should().Be(1);
+        auditChange.Change.FieldName.Should().Be(UserField.Forename);
+        auditChange.Change.Before.Should().Be("Jonty");
+        auditChange.Change.After.Should().Be("Jon");
+    }
+
 
 }

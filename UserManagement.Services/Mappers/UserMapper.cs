@@ -6,17 +6,17 @@ namespace UserManagement.Services.Mappers;
 
 public static class UserMapper
 {
-    public static User ToDomainUser(UserEntity user)
+    public static User ToDomainUser(UserEntity userEntity)
     {
         return new User
         {
-            Id = user.Id,
-            Forename = user.Forename,
-            Surname = user.Surname,
-            Email = user.Email,
-            Role = Enum.Parse<UserRole>(user.UserRole, ignoreCase: true),
-            IsActive = user.IsActive,
-            BirthDate = user.BirthDate
+            Id = userEntity.Id,
+            Forename = userEntity.Forename,
+            Surname = userEntity.Surname,
+            Email = userEntity.Email,
+            Role = Enum.Parse<UserRole>(userEntity.UserRole, ignoreCase: true),
+            IsActive = userEntity.IsActive,
+            BirthDate = userEntity.BirthDate
         };
     }
 

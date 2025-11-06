@@ -1,34 +1,42 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UserManagement.Models;
 using UserManagement.Services.Domain;
 
 namespace UserManagement.Services.Mappers;
 
-public static class AuditMapper
+public static class UserAuditMapper
 {
-    public static Audit ToUserEntity(AuditEntity audit)
+    //
+    public static UserAudit ToDomainAudit(UserAuditEntity userAuditEntity, List<UserAuditChangeEntity>? userAuditChangeEntities)
     {
-        return new Audit
+        UserAudit userAudit = new UserAudit();
+        return new UserAudit
         {
-            Id = audit.Id,
-            EntityId = audit.EntityId,
-            Timestamp = audit.Timestamp,
-            Action = Enum.Parse<AuditAction>(audit.AuditAction, ignoreCase: true),
-            ChangedBy = audit.ChangedBy,
-            Changes = audit.Changes
+            Id = userAuditEntity.Id,
+            UserId = userAuditEntity.UserEntityId,
+            LoggedAt = userAuditEntity.LoggedAt,
+            Action = Enum.Parse<AuditAction>(userAuditEntity.AuditAction, ignoreCase: true),
+            Changes = userAuditChangeEntities?
+                    .Select(ToDomainAuditChange)
+                    .ToList() ?? new List<UserAuditChange>()
         };
     }
 
-    public static AuditEntity ToAuditEntity(Audit audit)
+    public static UserAuditChange ToDomainAuditChange(UserAuditChangeEntity changeEntity)
     {
-        return new AuditEntity
+        return new UserAuditChange
         {
-            Id = audit.Id,
-            EntityId = audit.EntityId,
-            Timestamp = audit.Timestamp,
-            AuditAction = audit.Action.ToString(),
-            ChangedBy = audit.ChangedBy,
-            Changes = audit.Changes
+            Id = changeEntity.Id,
+            AuditId = changeEntity.AuditId,
+            Change = new UserAuditFieldChange
+            {
+                FieldName = Enum.Parse<UserField>(changeEntity.Field, ignoreCase: true),
+                Before = changeEntity.Before,
+                After = changeEntity.After
+            }
+
         };
     }
 }
