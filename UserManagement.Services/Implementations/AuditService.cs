@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Serilog;
 using UserManagement.Data;
 using UserManagement.Models;
 using UserMangement.Services.Events;
@@ -29,7 +30,7 @@ namespace UserManagement.Services.Domain.Implementations
                 LoggedAt = DateTime.UtcNow,
                 AuditAction = "Created"
             };
-
+            Log.Information("Creating new Audit for User {id} at {time}. Operation: {action}", audit.UserEntityId, audit.LoggedAt, audit.AuditAction);
             //Need to save the audit first to get the generated Id
             await _dataContext.CreateAsync(audit);
             await SaveAuditChangesAsync();
@@ -82,6 +83,7 @@ namespace UserManagement.Services.Domain.Implementations
 
             foreach (var change in changes)
             {
+                Log.Debug("Appending new change for audit {auditId}. Field: {field} - Before: {before} - After: {after}", audit.Id, change.Field, change.Before, change.After);
                 await _dataContext.CreateAsync(change);
             }
 

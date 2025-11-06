@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -148,9 +149,21 @@ namespace UserManagement.Web
         private static void ConfigureEventBusSubscriptions(WebApplication app)
         {
             var eventBus = app.Services.GetRequiredService<IEventBus>();
-            var auditService = app.Services.GetRequiredService<AuditService>();
 
-            eventBus.Subscribe<UserCreatedEvent>(auditService.Handle);
+            //Have to call this for each subscription
+            void SubscribeScoped<TEvent, TService>(Func<TService, TEvent, Task> handler)
+                where TEvent : IUserDomainEvent
+                where TService : notnull
+            {
+                eventBus.Subscribe<TEvent>(async evt =>
+                {
+                    using var scope = app.Services.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<TService>();
+                    await handler(service, evt);
+                });
+            }
+
+            SubscribeScoped<UserCreatedEvent, AuditService>((service, evt) => service.Handle(evt));
         }
     }
 
