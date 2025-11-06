@@ -154,15 +154,12 @@ public class UserService : IUserService
 
     public async Task<User> UpdateUserAsync(User user)
     {
-        Log.Debug("Attempting to update user: {@user}", user);
         ValidateUser(user);
 
         Log.Information("Updating user {Id}, {Forename} {Surname} to DB", user.Id, user.Forename, user.Surname);
         var existing = await _dataAccess.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-        //Check email uniqueness - would be nice if could reuse a funct here to check this.
-        //But also need to check whether Id is the same - unlike in Add.
         var duplicateEmailUser = await _dataAccess.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u =>
                 u.Email.ToLower() == user.Email.ToLower() &&
@@ -181,7 +178,8 @@ public class UserService : IUserService
             throw new KeyNotFoundException($"User with ID {user.Id} not found.");
         }
 
-        //Is manually setting entity values here bad?
+        var oldUser = UserMapper.ToDomainUser(existing);
+
         existing.Forename = user.Forename;
         existing.Surname = user.Surname;
         existing.Email = user.Email;
@@ -190,6 +188,15 @@ public class UserService : IUserService
         existing.BirthDate = user.BirthDate;
 
         _dataAccess.UpdateE(existing);
+        await SaveAsync();
+
+        await _eventBus.PublishAsync(new UserUpdatedEvent
+        {
+            UserId = user.Id,
+            OlderUser = oldUser,
+            NewUser = user
+        });
+
         return UserMapper.ToDomainUser(existing);
     }
 

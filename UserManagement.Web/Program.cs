@@ -164,6 +164,7 @@ namespace UserManagement.Web
             }
 
             SubscribeScoped<UserCreatedEvent, AuditService>((service, evt) => service.Handle(evt));
+            SubscribeScoped<UserUpdatedEvent, AuditService>((service, evt) => service.Handle(evt));
         }
     }
 

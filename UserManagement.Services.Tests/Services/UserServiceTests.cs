@@ -620,6 +620,44 @@ public class UserServiceTests
         );
     }
 
+    [Fact]
+    public async Task UpdateUserAsync_ShouldPublishUserUpdatedEvent()
+    {
+        var context = CreateContext();
+        var mockEventBus = new Mock<IEventBus>();
+        var service = new UserService(context, mockEventBus.Object);
+
+        var existingUser = new User
+        {
+            Forename = "Event",
+            Surname = "Man",
+            Email = "MrEvent@Yahoo.com",
+            Role = UserRole.User,
+            IsActive = true,
+            BirthDate = DateTime.Today.AddYears(-25)
+        };
+
+        var addedUser = await service.AddUserAsync(existingUser);
+
+        // Modify some fields
+        addedUser.Email = "updated@domain.com";
+        addedUser.IsActive = false;
+
+        // Act
+        var updatedUser = await service.UpdateUserAsync(addedUser);
+
+        // Assert
+        mockEventBus.Verify(
+            bus => bus.PublishAsync(It.Is<UserUpdatedEvent>(evt =>
+                evt.UserId == updatedUser.Id &&
+                evt.NewUser.Email == updatedUser.Email &&
+                evt.NewUser.Forename == updatedUser.Forename
+            )),
+            Times.Once
+        );
+    }
+
+
     ///   ====================
     ///   TEST SETUP FUNCTIONS
     ///   ====================

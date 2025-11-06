@@ -94,7 +94,117 @@ public class AuditServiceTests
         changes.Should().HaveCount(6);
         changes.Select(c => c.Field).Should().Contain(new[] { "Forename", "Surname", "Email", "Role", "IsActive", "BirthDate" });
     }
+    [Fact]
+    public async Task CreateUserUpdatedAuditAsync_ShouldCreateAuditAndOnlyChangedFields()
+    {
+        var mockContext = new Mock<IDataContext>();
 
+        var createdAudits = new List<UserAuditEntity>();
+        var createdChanges = new List<UserAuditChangeEntity>();
+
+        mockContext.Setup(c => c.CreateAsync(It.IsAny<UserAuditEntity>()))
+                   .Returns<UserAuditEntity>(entity =>
+                   {
+                       entity.Id = 1;
+                       createdAudits.Add(entity);
+                       return Task.CompletedTask;
+                   });
+
+        mockContext.Setup(c => c.CreateAsync(It.IsAny<UserAuditChangeEntity>()))
+                   .Returns<UserAuditChangeEntity>(change =>
+                   {
+                       createdChanges.Add(change);
+                       return Task.CompletedTask;
+                   });
+
+        mockContext.Setup(c => c.SaveChangesAsync()).ReturnsAsync(1);
+
+        var auditService = new AuditService(mockContext.Object);
+
+        var oldUser = new User
+        {
+            Forename = "John",
+            Surname = "Doe",
+            Email = "john.doe@example.com",
+            Role = UserRole.User,
+            IsActive = true,
+            BirthDate = new DateTime(1990, 1, 1)
+        };
+
+        var newUser = new User
+        {
+            Forename = "Johnny", //changed
+            Surname = "Doe",     //same
+            Email = "johnny.doe@example.com", //changed
+            Role = UserRole.Admin, //changed
+            IsActive = false,      //changed
+            BirthDate = new DateTime(1990, 1, 1) //same
+        };
+
+        //Act
+        await auditService.CreateUserUpdatedAuditAsync(123, oldUser, newUser);
+
+        //Assert
+        createdAudits.Should().ContainSingle();
+        var audit = createdAudits[0];
+        audit.UserEntityId.Should().Be(123);
+        audit.AuditAction.Should().Be("Updated");
+
+        //Only changed fields should be logged
+        createdChanges.Should().HaveCount(4);
+        createdChanges.Should().Contain(c => c.Field == "Forename" && c.Before == "John" && c.After == "Johnny");
+        createdChanges.Should().Contain(c => c.Field == "Email" && c.Before == "john.doe@example.com" && c.After == "johnny.doe@example.com");
+        createdChanges.Should().Contain(c => c.Field == "Role" && c.Before == "User" && c.After == "Admin");
+        createdChanges.Should().Contain(c => c.Field == "IsActive" && c.Before == "True" && c.After == "False");
+
+        mockContext.Verify(c => c.SaveChangesAsync(), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task AuditService_Handle_ShouldCreateUpdateAuditRecords()
+    {
+        var context = CreateContext();
+        var auditService = new AuditService(context);
+
+        var oldUser = new User
+        {
+            Forename = "Alice",
+            Surname = "Smith",
+            Email = "alice@domain.com",
+            Role = UserRole.User,
+            IsActive = true,
+            BirthDate = new DateTime(1995, 5, 5)
+        };
+
+        var newUser = new User
+        {
+            Forename = "Alicia", //changed
+            Surname = "Smith",
+            Email = "alice@domain.com",
+            Role = UserRole.User,
+            IsActive = false, //changed
+            BirthDate = new DateTime(1995, 5, 5)
+        };
+
+        var evt = new UserUpdatedEvent
+        {
+            UserId = 1,
+            OlderUser = oldUser,
+            NewUser = newUser
+        };
+
+        // Act
+        await auditService.Handle(evt);
+
+        // Assert
+        var audit = await context.GetAll<UserAuditEntity>().FirstOrDefaultAsync();
+        audit.Should().NotBeNull();
+        audit.AuditAction.Should().Be("Updated");
+
+        var changes = await context.GetAll<UserAuditChangeEntity>().ToListAsync();
+        changes.Should().HaveCount(2);
+        changes.Select(c => c.Field).Should().Contain(new[] { "Forename", "IsActive" });
+    }
     private DataContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<DataContext>()

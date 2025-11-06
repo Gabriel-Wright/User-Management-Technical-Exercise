@@ -202,7 +202,6 @@ public class UsersController : ControllerBase
         UserPatchApplier.ApplyPatch(existingUser, patchDto);
 
         var updatedUser = await _userService.UpdateUserAsync(existingUser);
-        await _userService.SaveAsync();
 
         var resultDto = UserDtoMapper.ToDto(updatedUser);
         return Ok(resultDto);
