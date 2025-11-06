@@ -8,19 +8,17 @@ namespace UserManagement.Services.Mappers;
 
 public static class UserAuditMapper
 {
-    //
-    public static UserAudit ToDomainAudit(UserAuditEntity userAuditEntity, List<UserAuditChangeEntity>? userAuditChangeEntities)
+    public static UserAudit ToDomainAudit(UserAuditEntity auditEntity)
     {
-        UserAudit userAudit = new UserAudit();
         return new UserAudit
         {
-            Id = userAuditEntity.Id,
-            UserId = userAuditEntity.UserEntityId,
-            LoggedAt = userAuditEntity.LoggedAt,
-            Action = Enum.Parse<AuditAction>(userAuditEntity.AuditAction, ignoreCase: true),
-            Changes = userAuditChangeEntities?
-                    .Select(ToDomainAuditChange)
-                    .ToList() ?? new List<UserAuditChange>()
+            Id = auditEntity.Id,
+            UserId = auditEntity.UserEntityId,
+            LoggedAt = auditEntity.LoggedAt,
+            Action = Enum.Parse<AuditAction>(auditEntity.AuditAction, ignoreCase: true),
+            Changes = auditEntity.Changes?
+                .Select(ToDomainAuditChange)
+                .ToList() ?? new List<UserAuditChange>()
         };
     }
 
@@ -36,7 +34,6 @@ public static class UserAuditMapper
                 Before = changeEntity.Before,
                 After = changeEntity.After
             }
-
         };
     }
 }

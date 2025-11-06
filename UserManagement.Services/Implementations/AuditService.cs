@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using UserManagement.Data;
 using UserManagement.Models;
+using UserManagement.Services.Mappers;
 using UserMangement.Services.Events;
 
 namespace UserManagement.Services.Domain.Implementations
@@ -16,6 +19,33 @@ namespace UserManagement.Services.Domain.Implementations
         {
             _dataContext = dataContext;
         }
+
+        public async Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAudits(int page, int pageSize)
+        {
+            //Should move this into a separate func
+            if (page < 1) page = 1;
+            if (pageSize <= 0) pageSize = 10;
+            if (pageSize > 20) pageSize = 20;
+
+            Log.Debug("Fetching paged audits. Page: {page}, num per page: {size}", page, pageSize);
+
+            var query = _dataContext.GetAll<UserAuditEntity>()
+                .Include(a => a.Changes)
+                .OrderByDescending(a => a.LoggedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var pagedAudits = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var audits = pagedAudits.Select(UserAuditMapper.ToDomainAudit);
+
+            return (audits, totalCount);
+        }
+
+
 
         public async Task CreateUserUpdatedAuditAsync(long userId, User oldUser, User newUser)
         {

@@ -18,11 +18,8 @@ public class AuditMapperTests
             AuditAction = "Deleted",
         };
 
+        var audit = UserAuditMapper.ToDomainAudit(auditEntity);
 
-
-        var audit = UserAuditMapper.ToDomainAudit(auditEntity, null);
-
-        // Assert
         audit.Id.Should().Be(1);
         audit.UserId.Should().Be(100);
         audit.LoggedAt.Should().Be(new DateTime(2023, 1, 1));
@@ -51,17 +48,14 @@ public class AuditMapperTests
         };
 
         var auditChanges = new List<UserAuditChangeEntity> { auditChangeEntity };
+        auditEntity.Changes = auditChanges;
+        var audit = UserAuditMapper.ToDomainAudit(auditEntity);
 
-        // Act
-        var audit = UserAuditMapper.ToDomainAudit(auditEntity, auditChanges);
-
-        // Assert
         audit.Id.Should().Be(1);
         audit.UserId.Should().Be(100);
         audit.LoggedAt.Should().Be(new DateTime(2023, 1, 1));
         audit.Action.Should().Be(AuditAction.Deleted);
 
-        // Check field-level change
         var fieldChange = audit.Changes!.First().Change;
         fieldChange.FieldName.Should().Be(UserField.Forename);
         fieldChange.Before.Should().Be("Jonty");
