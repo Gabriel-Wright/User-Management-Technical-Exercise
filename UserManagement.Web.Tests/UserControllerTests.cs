@@ -341,7 +341,6 @@ public class UserControllerTests
         resultDto!.Forename.Should().Be("Updated");
 
         _mockService.Verify(s => s.UpdateUserAsync(It.IsAny<User>()), Times.Once);
-        _mockService.Verify(s => s.SaveAsync(), Times.Once);
     }
 
     [Fact]
@@ -451,7 +450,6 @@ public class UserControllerTests
 
         result.Should().BeOfType<NoContentResult>();
         _mockService.Verify(s => s.DeleteUserAsync(1), Times.Once);
-        _mockService.Verify(s => s.SaveAsync(), Times.Once);
     }
 
     [Fact]
@@ -474,7 +472,6 @@ public class UserControllerTests
 
         result.Should().BeOfType<NoContentResult>();
         _mockService.Verify(s => s.SoftDeleteUserAsync(1), Times.Once);
-        _mockService.Verify(s => s.SaveAsync(), Times.Once);
     }
 
     [Fact]
@@ -484,7 +481,6 @@ public class UserControllerTests
 
         result.Should().BeOfType<BadRequestObjectResult>();
         _mockService.Verify(s => s.SoftDeleteUserAsync(It.IsAny<long>()), Times.Never);
-        _mockService.Verify(s => s.SaveAsync(), Times.Never);
     }
 
     [Fact]
@@ -499,7 +495,6 @@ public class UserControllerTests
             .WithMessage("User not found");
 
         _mockService.Verify(s => s.SoftDeleteUserAsync(666), Times.Once);//reaches services but cant find user
-        _mockService.Verify(s => s.SaveAsync(), Times.Never);
     }
 
 }

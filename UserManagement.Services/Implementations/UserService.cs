@@ -226,6 +226,11 @@ public class UserService : IUserService
         existing.Deleted = true;
         _dataAccess.UpdateE(existing);
         await _dataAccess.SaveChangesAsync();
+
+        await _eventBus.PublishAsync(new UserDeletedEvent
+        {
+            UserId = id
+        });
     }
 
     public async Task SaveAsync()

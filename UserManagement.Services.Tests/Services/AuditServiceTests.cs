@@ -205,6 +205,44 @@ public class AuditServiceTests
         changes.Should().HaveCount(2);
         changes.Select(c => c.Field).Should().Contain(new[] { "Forename", "IsActive" });
     }
+
+    [Fact]
+    public async Task CreateUserDeletedAuditAsync_ShouldCreateDeletedAuditOnly()
+    {
+        var mockContext = new Mock<IDataContext>();
+
+        var createdAudits = new List<UserAuditEntity>();
+        var createdChanges = new List<UserAuditChangeEntity>();
+
+        mockContext.Setup(c => c.CreateAsync(It.IsAny<UserAuditEntity>()))
+                   .Returns<UserAuditEntity>(entity =>
+                   {
+                       createdAudits.Add(entity);
+                       return Task.CompletedTask;
+                   });
+
+        mockContext.Setup(c => c.CreateAsync(It.IsAny<UserAuditChangeEntity>()))
+                   .Returns<UserAuditChangeEntity>(change =>
+                   {
+                       createdChanges.Add(change);
+                       return Task.CompletedTask;
+                   });
+
+        mockContext.Setup(c => c.SaveChangesAsync()).ReturnsAsync(1);
+
+        var auditService = new AuditService(mockContext.Object);
+
+        await auditService.CreateUserDeletedAuditAsync(42);
+
+        createdAudits.Should().ContainSingle();
+        var audit = createdAudits[0];
+        audit.UserEntityId.Should().Be(42);
+        audit.AuditAction.Should().Be("Deleted");
+
+        createdChanges.Should().BeEmpty();
+        mockContext.Verify(c => c.SaveChangesAsync(), Times.Once);
+    }
+
     private DataContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<DataContext>()

@@ -129,6 +129,23 @@ namespace UserManagement.Services.Domain.Implementations
             await SaveAuditChangesAsync();
         }
 
+        public async Task CreateUserDeletedAuditAsync(long userId)
+        {
+            var audit = new UserAuditEntity
+            {
+                UserEntityId = userId,
+                LoggedAt = DateTime.UtcNow,
+                AuditAction = "Deleted"
+            };
+
+            Log.Information("Creating new Audit for User {id} at {time}. Operation: {action}", audit.UserEntityId, audit.LoggedAt, audit.AuditAction);
+            //Need to save the audit first to get the generated Id
+            await _dataContext.CreateAsync(audit);
+            await SaveAuditChangesAsync();
+
+            //No need to log specific changes - whole thing was deleted
+        }
+
         public async Task SaveAuditChangesAsync()
         {
             await _dataContext.SaveChangesAsync();
@@ -144,6 +161,11 @@ namespace UserManagement.Services.Domain.Implementations
         public async Task Handle(UserUpdatedEvent evt)
         {
             await CreateUserUpdatedAuditAsync(evt.UserId, evt.OlderUser, evt.NewUser);
+        }
+
+        public async Task Handle(UserDeletedEvent evt)
+        {
+            await CreateUserDeletedAuditAsync(evt.UserId);
         }
 
     }

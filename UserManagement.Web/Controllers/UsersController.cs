@@ -235,7 +235,6 @@ public class UsersController : ControllerBase
         if (id <= 0) return BadRequest("Invalid user ID.");
 
         await _userService.SoftDeleteUserAsync(id);
-        await _userService.SaveAsync();
 
         return NoContent();
     }
