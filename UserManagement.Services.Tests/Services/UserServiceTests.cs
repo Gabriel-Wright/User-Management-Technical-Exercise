@@ -191,22 +191,6 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task FilterByActiveAsync_WhenActiveTrue_ShouldReturnOnlyActiveUsers()
-    {
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        await AddTestUsers(context);
-        await service.SaveAsync();
-
-        var result = await service.FilterByActiveAsync(true);
-
-        result.Should().HaveCount(1);
-        result.Single().Email.Should().Be("messy@gmail.com");
-        result.All(u => u.IsActive).Should().BeTrue();
-    }
-
-    [Fact]
     public async Task GetByIdAsync_WhenUserExists_ShouldReturnUser()
     {
         var context = CreateContext();
@@ -235,67 +219,6 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task GetByNameAsync_WhenUserExists_ShouldReturnMatchingUsers()
-    {
-
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        await AddTestUsers(context);
-        await service.SaveAsync();
-
-        var result = await service.GetByNameAsync("Mr", "Messy");
-
-        // Assert
-        result.Should().ContainSingle();
-        result.Single().Email.Should().Be("messy@gmail.com");
-    }
-
-    [Fact]
-    public async Task GetByNameAsync_ShouldBeCaseInsensitive()
-    {
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        await AddTestUsers(context);
-        await service.SaveAsync();
-
-        var result = await service.GetByNameAsync("MR", "MESSY");
-
-        // Assert
-        result.Should().ContainSingle();
-        result.Single().Email.Should().Be("messy@gmail.com");
-
-    }
-
-    [Fact]
-    public async Task GetByNameAsync_WhenForenameEmpty_ShouldThrowArgumentException()
-    {
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        await AddTestUsers(context);
-        await service.SaveAsync();
-
-        Func<Task> act = async () => await service.GetByNameAsync("", "Barney");
-
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*Forename*");
-    }
-
-    [Fact]
-    public async Task GetByNameAsync_WhenNoMatch_ShouldReturnEmptyList()
-    {
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        var result = await service.GetByNameAsync("Mrs", "Tumble");
-
-        // Assert
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
     public async Task AddUserAsync_WithValidUser_ShouldAddUser()
     {
         var context = CreateContext();
@@ -315,7 +238,7 @@ public class UserServiceTests
         await service.SaveAsync();
 
         result.Should().NotBeNull();
-        result.Id.Should().BeGreaterThan(0);
+        result.Id.Should().Be(1);
         result.Email.Should().Be("billy@ballet.com");
 
         var usersInDb = await context.Users!.ToListAsync();
@@ -467,42 +390,6 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_WhenUserExists_ShouldDeleteUser()
-    {
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        await AddTestUsers(context);
-        await service.SaveAsync();
-
-        var users = await service.GetAllAsync();
-        users.Should().HaveCount(2);
-
-
-        await service.DeleteUserAsync(1);
-        await service.SaveAsync();
-
-        users = await service.GetAllAsync();
-        users.Should().HaveCount(1);
-        users.Should().NotContain(u => u.Id == 1);
-    }
-
-    [Fact]
-    public async Task DeleteUserAsync_WhenUserDoesNotExist_ShouldThrowKeyNotFoundException()
-    {
-        var context = CreateContext();
-        var service = CreateUserService(context);
-
-        await AddTestUsers(context);
-        await service.SaveAsync();
-
-        Func<Task> act = async () => await service.DeleteUserAsync(999);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*not found*");
-    }
-
-    [Fact]
     public async Task SoftDeleteUserAsync_WhenUserExists_ShouldMarkDeletedAndHideFromQueries()
     {
         // Arrange
@@ -612,7 +499,7 @@ public class UserServiceTests
 
         mockEventBus.Verify(
             bus => bus.PublishAsync(It.Is<UserCreatedEvent>(evt =>
-                evt.UserId == result.Id &&
+                evt.User.Id == newUser.Id &&
                 evt.User.Email == newUser.Email &&
                 evt.User.Forename == newUser.Forename
             )),
@@ -639,14 +526,11 @@ public class UserServiceTests
 
         var addedUser = await service.AddUserAsync(existingUser);
 
-        // Modify some fields
         addedUser.Email = "updated@domain.com";
         addedUser.IsActive = false;
 
-        // Act
         var updatedUser = await service.UpdateUserAsync(addedUser);
 
-        // Assert
         mockEventBus.Verify(
             bus => bus.PublishAsync(It.Is<UserUpdatedEvent>(evt =>
                 evt.UserId == updatedUser.Id &&

@@ -14,19 +14,6 @@ public class UserAuditApiService : IUserAuditApiService
         _httpClient = httpClient;
     }
 
-    public async Task<PagedResult<UserAuditDto>> GetAllAuditsAsync(int page = 1, int pageSize = 10)
-    {
-        var queryParams = new Dictionary<string, string?>
-        {
-            ["page"] = page.ToString(),
-            ["pageSize"] = pageSize.ToString()
-        };
-
-        var url = QueryHelpers.AddQueryString("users/audits", queryParams);
-
-        return await GetPagedResultAsync(url);
-    }
-
     public async Task<PagedResult<UserAuditDto>> GetAuditsByQueryAsync(
         string? searchTerm = null,
         string? action = null,

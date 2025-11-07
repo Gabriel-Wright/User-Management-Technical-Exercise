@@ -25,7 +25,7 @@ namespace UserManagement.Services.Validation
 
             var today = DateTime.Today;
             var age = today.Year - birthDate.Year;
-            if (birthDate > today.AddYears(-age)) age--; // adjust if birthday hasn't occurred this year
+            if (birthDate > today.AddYears(-age)) age--; //Adjust for whether birthday has happened this year
 
             if (age < MinAge)
             {

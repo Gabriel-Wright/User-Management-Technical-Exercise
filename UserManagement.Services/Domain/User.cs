@@ -5,7 +5,7 @@ using UserManagement.Services.Validation;
 namespace UserManagement.Services.Domain;
 
 //<summary>
-// Added Domain Object for User entity to try separate data layer from business logic
+// Added Domain Objects for each entity to try separate data layer from business logic
 //</summary>
 public class User
 {

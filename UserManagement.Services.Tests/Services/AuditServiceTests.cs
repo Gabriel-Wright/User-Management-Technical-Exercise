@@ -243,55 +243,6 @@ public class AuditServiceTests
         mockContext.Verify(c => c.SaveChangesAsync(), Times.Once);
     }
 
-    [Fact]
-    public async Task GetAllUserAudits_ShouldReturnPagedResults()
-    {
-        var context = CreateContext();
-        var service = new AuditService(context);
-
-        var user = new UserEntity
-        {
-            Forename = "Test",
-            Surname = "User",
-            Email = "audituser@example.com",
-            IsActive = true,
-            BirthDate = DateTime.Today.AddYears(-25)
-        };
-        await context.CreateAsync(user);
-        await context.SaveChangesAsync();
-
-        for (int i = 0; i < 5; i++)
-        {
-            await context.CreateAsync(new UserAuditEntity
-            {
-                UserEntityId = user.Id,
-                LoggedAt = DateTime.UtcNow.AddMinutes(-i),
-                AuditAction = "Updated"
-            });
-        }
-        await context.SaveChangesAsync();
-
-        var (audits, totalCount) = await service.GetAllUserAudits(page: 1, pageSize: 2);
-
-        totalCount.Should().Be(5);
-        audits.Should().HaveCount(2);
-        audits.First().Action.Should().Be(AuditAction.Updated);
-        audits.Should().BeInDescendingOrder(a => a.LoggedAt);
-    }
-
-    [Fact]
-    public async Task GetAllUserAudits_WhenNoAudits_ShouldReturnEmpty()
-    {
-        var context = CreateContext();
-        var service = new AuditService(context);
-
-        var (audits, totalCount) = await service.GetAllUserAudits(page: 1, pageSize: 10);
-
-        totalCount.Should().Be(0);
-        audits.Should().BeEmpty();
-    }
-
-
     private DataContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<DataContext>()

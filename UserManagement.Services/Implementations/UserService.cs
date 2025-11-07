@@ -25,17 +25,17 @@ namespace UserManagement.Services.Domain.Implementations;
 /// </summary>
 public class UserService : IUserService
 {
-    private readonly IDataContext _dataAccess;
+    private readonly IDataContext _dataContext;
     private readonly IEventBus _eventBus;
-    public UserService(IDataContext dataAccess, IEventBus eventBus)
+    public UserService(IDataContext dataContext, IEventBus eventBus)
     {
-        _dataAccess = dataAccess;
+        _dataContext = dataContext;
         _eventBus = eventBus;
     }
     public async Task<IEnumerable<User>> GetAllAsync()
     {
-        Log.Debug("Fetching all Users from DB.");
-        var userEntities = await _dataAccess.GetAll<UserEntity>().ToListAsync();
+        Log.Information("Fetching all Users.");
+        var userEntities = await _dataContext.GetAll<UserEntity>().ToListAsync();
         return userEntities.Select(UserMapper.ToDomainUser);
     }
 
@@ -43,7 +43,7 @@ public class UserService : IUserService
     public async Task<(IEnumerable<User> Users, int TotalCount)> GetUsersAsync(UserQuery query)
     {
         ValidateQuery(query);
-        var usersQuery = _dataAccess.GetAll<UserEntity>().AsQueryable();
+        var usersQuery = _dataContext.GetAll<UserEntity>().AsQueryable();
 
         //Filter by IsActive
         if (query.IsActive.HasValue)
@@ -63,13 +63,7 @@ public class UserService : IUserService
         var totalCount = await usersQuery.CountAsync();
 
         //Sorting
-        usersQuery = query.SortBy.ToLower() switch
-        {
-            "forename" => query.SortDescending ? usersQuery.OrderByDescending(u => u.Forename) : usersQuery.OrderBy(u => u.Forename),
-            "surname" => query.SortDescending ? usersQuery.OrderByDescending(u => u.Surname) : usersQuery.OrderBy(u => u.Surname),
-            "email" => query.SortDescending ? usersQuery.OrderByDescending(u => u.Email) : usersQuery.OrderBy(u => u.Email),
-            _ => query.SortDescending ? usersQuery.OrderByDescending(u => u.Id) : usersQuery.OrderBy(u => u.Id)
-        };
+        usersQuery = ApplySorting(usersQuery, query.SortBy, query.SortDescending);
 
         //Actually returning the list of userEntities
         var usersPage = await usersQuery
@@ -77,47 +71,16 @@ public class UserService : IUserService
             .Take(query.PageSize)
             .ToListAsync();
 
-        //Returning mapped over userentities -> DomainUser
+        //Returning mapped over userEntities -> DomainUser
         return (usersPage.Select(UserMapper.ToDomainUser), totalCount);
     }
 
-    public async Task<IEnumerable<User>> FilterByActiveAsync(bool isActive)
-    {
-        Log.Debug("Fetching all Users from DB that are {Active}.", isActive);
-        var userEntities = await _dataAccess.GetAll<UserEntity>()
-            .Where(u => u.IsActive == isActive)
-            .ToListAsync();
-
-        return userEntities.Select(UserMapper.ToDomainUser);
-    }
-
-    public async Task<IEnumerable<User>> GetByNameAsync(string forename, string surname)
-    {
-        Log.Debug("Attempting to get all users of Name {forename}, {surname}", forename, surname);
-        if (string.IsNullOrWhiteSpace(forename))
-        {
-            Log.Error("GetByNameAsync called with empty forename: {forename}", forename);
-            throw new ArgumentException("Forename cannot be empty.", nameof(forename));
-        }
-        if (string.IsNullOrWhiteSpace(surname))
-        {
-            Log.Error("GetByNameAsync called with empty surname: {surname}", surname);
-            throw new ArgumentException("Surname cannot be empty.", nameof(surname));
-        }
-        forename = forename.Trim();
-        surname = surname.Trim();
-
-        Log.Information("Fetching user of name: {forename} {surname}", forename, surname);
-        var userEntities = await _dataAccess.GetAll<UserEntity>()
-            .Where(u => u.Forename.ToLower() == forename.ToLower() &&
-                        u.Surname.ToLower() == surname.ToLower())
-            .ToListAsync();
-        return userEntities.Select(UserMapper.ToDomainUser);
-    }
+    //This is needed since searching by Id can sometimes be necessary for other service calls
+    // e.g. updating
     public async Task<User?> GetByIdAsync(long id)
     {
-        Log.Debug("Fetching user with ID: {id}", id);
-        var userEntity = await _dataAccess.GetAll<UserEntity>()
+        Log.Information("Fetching user with ID: {id}", id);
+        var userEntity = await _dataContext.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u => u.Id == id);
 
         return userEntity == null ? null : UserMapper.ToDomainUser(userEntity);
@@ -125,10 +88,10 @@ public class UserService : IUserService
 
     public async Task<User> AddUserAsync(User user)
     {
-        Log.Debug("Attempting to add user: {@user}", user);
+        Log.Information("Attempting to add user: {@user}", user);
         ValidateUser(user);
 
-        var existing = await _dataAccess.GetAll<UserEntity>()
+        var existing = await _dataContext.GetAll<UserEntity>()
         .FirstOrDefaultAsync(u => u.Email.ToLower() == user.Email.ToLower());
 
         if (existing != null)
@@ -140,9 +103,9 @@ public class UserService : IUserService
 
         Log.Information("Adding user {Id}, {Forename} {Surname} to DB", user.Id, user.Forename, user.Surname);
         var userEntity = UserMapper.ToUserEntity(user);
-        await _dataAccess.CreateAsync(userEntity);
+        await _dataContext.CreateAsync(userEntity);
         await SaveAsync();
-
+        user.Id = userEntity.Id;
         await _eventBus.PublishAsync(new UserCreatedEvent
         {
             UserId = userEntity.Id,
@@ -157,10 +120,10 @@ public class UserService : IUserService
         ValidateUser(user);
 
         Log.Information("Updating user {Id}, {Forename} {Surname} to DB", user.Id, user.Forename, user.Surname);
-        var existing = await _dataAccess.GetAll<UserEntity>()
+        var existing = await _dataContext.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-        var duplicateEmailUser = await _dataAccess.GetAll<UserEntity>()
+        var duplicateEmailUser = await _dataContext.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u =>
                 u.Email.ToLower() == user.Email.ToLower() &&
                 u.Id != user.Id);
@@ -187,9 +150,10 @@ public class UserService : IUserService
         existing.UserRole = user.Role.ToString();
         existing.BirthDate = user.BirthDate;
 
-        _dataAccess.UpdateE(existing);
+        _dataContext.UpdateE(existing);
         await SaveAsync();
 
+        user.Id = existing.Id;
         await _eventBus.PublishAsync(new UserUpdatedEvent
         {
             UserId = user.Id,
@@ -200,32 +164,18 @@ public class UserService : IUserService
         return UserMapper.ToDomainUser(existing);
     }
 
-    // public async Task DeleteUserAsync(long id)
-    // {
-    //     Log.Debug("Deleting user with Id {id}.", id);
-    //     var existing = await _dataAccess.GetAll<UserEntity>()
-    //         .FirstOrDefaultAsync(u => u.Id == id);
-
-    //     if (existing == null)
-    //     {
-    //         Log.Error("User with Id {id} not found.", id);
-    //         throw new KeyNotFoundException($"User with ID {id} not found.");
-    //     }
-
-    //     _dataAccess.Delete(existing);
-    // }
-
     public async Task SoftDeleteUserAsync(long id)
     {
-        var existing = await _dataAccess.GetAll<UserEntity>()
+        Log.Information("Soft deleting user with ID: {id}", id);
+        var existing = await _dataContext.GetAll<UserEntity>()
             .FirstOrDefaultAsync(u => u.Id == id);
 
         if (existing == null)
             throw new KeyNotFoundException($"User with ID {id} not found.");
 
         existing.Deleted = true;
-        _dataAccess.UpdateE(existing);
-        await _dataAccess.SaveChangesAsync();
+        _dataContext.UpdateE(existing);
+        await _dataContext.SaveChangesAsync();
 
         await _eventBus.PublishAsync(new UserDeletedEvent
         {
@@ -236,7 +186,7 @@ public class UserService : IUserService
     public async Task SaveAsync()
     {
         Log.Information("Saving changes to DB.");
-        await _dataAccess.SaveChangesAsync();
+        await _dataContext.SaveChangesAsync();
     }
 
     //Needed to check EF validation
@@ -260,5 +210,17 @@ public class UserService : IUserService
         if (query.PageSize > 20) query.PageSize = 20; //enforcing a maximum here
         if (string.IsNullOrWhiteSpace(query.SortBy)) query.SortBy = "Id";
     }
+
+    private IQueryable<UserEntity> ApplySorting(IQueryable<UserEntity> query, string sortBy, bool descending)
+    {
+        return sortBy.ToLower() switch
+        {
+            "forename" => descending ? query.OrderByDescending(u => u.Forename) : query.OrderBy(u => u.Forename),
+            "surname" => descending ? query.OrderByDescending(u => u.Surname) : query.OrderBy(u => u.Surname),
+            "email" => descending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+            _ => descending ? query.OrderByDescending(u => u.Id) : query.OrderBy(u => u.Id)
+        };
+    }
+
 }
 

@@ -20,24 +20,8 @@ public class UserAuditsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all audits (paginated)
+    /// Get audits by query (paginated)
     /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetAllAudits([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-    {
-        Log.Information("Fetching all audits for page {page} of size {size}", page, pageSize);
-        (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAllUserAudits(page, pageSize);
-
-        var result = new PagedResult<UserAuditDto>
-        {
-            Items = audits.Select(UserAuditDtoMapper.ToDto).ToList(),
-            TotalCount = totalCount,
-            PageNumber = page,
-            PageSize = pageSize
-        };
-        return Ok(result);
-    }
-
     [HttpGet("query")]
     public async Task<IActionResult> GetUsersByQuery([FromQuery] UserAuditQueryDto queryDto)
     {

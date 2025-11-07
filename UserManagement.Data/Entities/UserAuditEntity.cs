@@ -14,7 +14,7 @@ public class UserAuditEntity
 
     [Required]
     [ForeignKey("UserEntityId")]
-    public UserEntity? UserEntity { get; set; }
+    public UserEntity UserEntity { get; set; } = default!;
     [Required]
     public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
     [Required]

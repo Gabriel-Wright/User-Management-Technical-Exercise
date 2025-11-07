@@ -22,6 +22,9 @@ namespace UserManagement.Services.Domain.Implementations
         }
         public async Task<(IEnumerable<UserAudit> userAudits, int totalCount)> GetAuditsByQueryAsync(UserAuditQuery passedQuery)
         {
+            Log.Information("Fetching audits by query");
+            ValidateQuery(passedQuery);
+
             //Gonna include User Entity and changes here, so we are searching by Joined data.
             var auditsQuery = _dataContext.GetAll<UserAuditEntity>()
                 .AsTracking()
@@ -60,49 +63,19 @@ namespace UserManagement.Services.Domain.Implementations
             return (pagedAudits.Select(UserAuditMapper.ToDomainAudit), totalCount);
         }
 
-        public async Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAudits(int page, int pageSize)
-        {
-            //Should move this into a separate func
-            if (page < 1) page = 1;
-            if (pageSize <= 0) pageSize = 10;
-            if (pageSize > 20) pageSize = 20;
-
-            Log.Debug("Fetching paged audits. Page: {page}, num per page: {size}", page, pageSize);
-
-            var query = _dataContext.GetAll<UserAuditEntity>()
-            .AsTracking()
-                .Include(a => a.Changes)
-                .Include(a => a.UserEntity)
-                .IgnoreQueryFilters()
-                .OrderByDescending(a => a.LoggedAt);
-
-            var totalCount = await query.CountAsync();
-
-            var pagedAudits = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var audits = pagedAudits.Select(UserAuditMapper.ToDomainAudit);
-
-            return (audits, totalCount);
-        }
-
         public async Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAuditsById(long id, int page, int pageSize)
         {
-            //Should move this into a separate func
             if (page < 1) page = 1;
             if (pageSize <= 0) pageSize = 10;
             if (pageSize > 20) pageSize = 20;
 
-            Log.Debug("Fetching paged audits. Page: {page}, num per page: {size}", page, pageSize);
+            Log.Information("Fetching audits for usser of Id {id} page {page} of size {size}.", id, page, pageSize);
 
             var query = _dataContext.GetAll<UserAuditEntity>()
             .Where(a => a.UserEntityId == id)
             .Include(a => a.UserEntity)
             .Include(a => a.Changes)
-            .IgnoreQueryFilters()
-                .OrderByDescending(a => a.LoggedAt);
+            .OrderByDescending(a => a.LoggedAt);
 
             var totalCount = await query.CountAsync();
 
@@ -206,7 +179,8 @@ namespace UserManagement.Services.Domain.Implementations
             await _dataContext.CreateAsync(audit);
             await SaveAuditChangesAsync();
 
-            //No need to log specific changes - whole thing was deleted
+            //No need to log specific UserAuditChanges - whole thing - do not need to see specific changes
+            //Purposefully have designed this with idea - we are never searching as granuarly on specific field changes
         }
 
         public async Task SaveAuditChangesAsync()
