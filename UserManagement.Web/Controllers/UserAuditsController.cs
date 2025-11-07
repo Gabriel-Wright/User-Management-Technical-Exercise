@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
@@ -36,6 +37,36 @@ public class UserAuditsController : ControllerBase
         };
         return Ok(result);
     }
+
+    [HttpGet("query")]
+    public async Task<IActionResult> GetUsersByQuery([FromQuery] UserAuditQueryDto queryDto)
+    {
+        AuditAction? action = null;
+        if (!string.IsNullOrWhiteSpace(queryDto.Action))
+            action = Enum.Parse<AuditAction>(queryDto.Action, ignoreCase: true);
+
+        {
+            var query = new UserAuditQuery
+            {
+                Page = queryDto.Page,
+                PageSize = queryDto.PageSize,
+                SearchTerm = queryDto.SearchTerm,
+                Action = action,
+                // No sorting implemented yet
+            };
+            (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAuditsByQueryAsync(query);
+            var result = new PagedResult<UserAuditDto>
+            {
+                Items = audits.Select(UserAuditDtoMapper.ToDto).ToList(),
+                TotalCount = totalCount,
+                PageNumber = query.Page,
+                PageSize = query.PageSize
+            };
+
+            return Ok(result);
+        }
+    }
+
 
     /// <summary>
     /// Get audits for a specific user (paginated)

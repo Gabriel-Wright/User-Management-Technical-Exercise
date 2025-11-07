@@ -8,6 +8,8 @@ namespace UserManagement.Services.Domain.Interfaces;
 public interface IAuditService
 {
     Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAudits(int page, int pageSize);
+    Task<(IEnumerable<UserAudit> userAudits, int totalCount)> GetAuditsByQueryAsync(UserAuditQuery passedQuery);
+
     Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAuditsById(long id, int page, int pageSize);
     Task CreateUserUpdatedAuditAsync(long userId, User oldUser, User newUser);
     Task CreateUserCreatedAuditAsync(long userId, User user);

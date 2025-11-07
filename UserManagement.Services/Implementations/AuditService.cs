@@ -20,6 +20,44 @@ namespace UserManagement.Services.Domain.Implementations
         {
             _dataContext = dataContext;
         }
+        public async Task<(IEnumerable<UserAudit> userAudits, int totalCount)> GetAuditsByQueryAsync(UserAuditQuery passedQuery)
+        {
+            //Gonna include User Entity and changes here, so we are searching by Joined data.
+            var auditsQuery = _dataContext.GetAll<UserAuditEntity>()
+                .AsTracking()
+                .Include(a => a.UserEntity)
+                .Include(a => a.Changes)
+                .AsQueryable();
+
+            if (passedQuery.Action.HasValue)
+            {
+                var actionStr = passedQuery.Action.Value.ToString();
+                auditsQuery = auditsQuery.Where(a => a.AuditAction == actionStr);
+            }
+
+            //simple property search on user's forename, surname, email individually
+            //if expanded would combine into single search term
+            if (!string.IsNullOrWhiteSpace(passedQuery.SearchTerm))
+            {
+                var term = passedQuery.SearchTerm.Trim().ToLower();
+                auditsQuery = auditsQuery.Where(a => a.UserEntity != null &&
+                    (a.UserEntity.Forename.ToLower().Contains(term) ||
+                     a.UserEntity.Surname.ToLower().Contains(term) ||
+                     a.UserEntity.Email.ToLower().Contains(term)));
+            }
+
+            //For now order by date as default
+            auditsQuery = auditsQuery.OrderByDescending(a => a.LoggedAt);
+
+            var totalCount = await auditsQuery.CountAsync();
+
+            var pagedAudits = await auditsQuery
+                .Skip((passedQuery.Page - 1) * passedQuery.PageSize)
+                .Take(passedQuery.PageSize)
+                .ToListAsync();
+
+            return (pagedAudits.Select(UserAuditMapper.ToDomainAudit), totalCount);
+        }
 
         public async Task<(IEnumerable<UserAudit>, int totalCount)> GetAllUserAudits(int page, int pageSize)
         {
@@ -188,6 +226,16 @@ namespace UserManagement.Services.Domain.Implementations
         public async Task Handle(UserDeletedEvent evt)
         {
             await CreateUserDeletedAuditAsync(evt.UserId);
+        }
+
+
+
+        private void ValidateQuery(UserAuditQuery query)
+        {
+            if (query.Page < 1) query.Page = 1;
+            if (query.PageSize <= 0) query.PageSize = 10;
+            if (query.PageSize > 20) query.PageSize = 20; //enforcing a maximum here
+            if (string.IsNullOrWhiteSpace(query.SortBy)) query.SortBy = "Id";
         }
 
     }

@@ -7,6 +7,9 @@
 @inject IUserAuditApiService UserAuditService
 
 <h3>User Audits</h3>
+<UserAuditSearchBar SearchTerm="@AuditSearchTerm" SearchTermChanged="@((val) => AuditSearchTerm = val)"
+    SelectedAuditAction="@SelectedAuditAction" SelectedAuditActionChanged="@((val) => SelectedAuditAction = val)"
+    OnSearch="HandleAuditSearchChanged" />
 @switch (CurrentState)
 {
     case AuditListState.Loading:
@@ -60,6 +63,8 @@
     private UserAuditDto? SelectedAuditDto;
     private bool ShowAuditView = false;
     private string? LoadErrorMessage;
+    private string? AuditSearchTerm;
+    private string? SelectedAuditAction;
     private int CurrentPage = 1;
     private readonly int PageSize = 10;
     private int TotalPages => TotalCount > 0
@@ -80,7 +85,13 @@
 
         try
         {
-            var result = await UserAuditService.GetAllAuditsAsync(page: CurrentPage, pageSize: PageSize);
+            var result = await UserAuditService.GetAuditsByQueryAsync(
+            searchTerm: AuditSearchTerm,
+            action: SelectedAuditAction,
+            page: CurrentPage,
+            pageSize: PageSize
+            );
+
             Audits = result.Items.ToList();
             TotalCount = result.TotalCount;
             CurrentState = result.TotalCount > 0
@@ -114,6 +125,14 @@
     private async Task HandlePageChanged(int newPage)
     {
         CurrentPage = newPage;
+        await LoadAudits();
+    }
+
+    private async Task HandleAuditSearchChanged((string? searchTerm, string? action) args)
+    {
+        AuditSearchTerm = args.searchTerm ?? "";
+        SelectedAuditAction = args.action;
+        CurrentPage = 1;
         await LoadAudits();
     }
 

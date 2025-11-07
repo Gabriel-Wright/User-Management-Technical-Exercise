@@ -1,0 +1,28 @@
+<div class="d-flex mb-3 gap-2 align-items-center">
+    <input type="text" id="audit-search-bar" class="form-control w-25" placeholder="Search audits..."
+        @bind="SearchTerm" />
+
+    <select class="form-select w-auto ms-3" @bind="SelectedAuditAction">
+        <option value="">---</option>
+        <option value="Created">Created</option>
+        <option value="Updated">Updated</option>
+        <option value="Deleted">Deleted</option>
+    </select>
+
+    <button class="btn btn-primary ms-2" @onclick="OnSearchClicked">Search</button>
+</div>
+
+@code {
+    [Parameter] public string? SearchTerm { get; set; }
+    [Parameter] public EventCallback<string?> SearchTermChanged { get; set; }
+
+    [Parameter] public string? SelectedAuditAction { get; set; }
+    [Parameter] public EventCallback<string?> SelectedAuditActionChanged { get; set; }
+
+    [Parameter] public EventCallback<(string? searchTerm, string? action)> OnSearch { get; set; }
+
+    private async Task OnSearchClicked()
+    {
+        await OnSearch.InvokeAsync((SearchTerm, SelectedAuditAction));
+    }
+}
