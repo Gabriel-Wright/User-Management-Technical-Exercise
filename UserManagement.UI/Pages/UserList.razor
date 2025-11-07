@@ -325,12 +325,10 @@
         };
     }
 
-    //Here we double load in the case that the user deleted is the last one on the page. This is a bit
-    //wasteful, but since it is rarer edge case I am OK with handling it this way.
     private async Task HandleUserDeleted(UserDto deleted)
     {
-        await LoadUsers();
-        if ((users == null || !users.Any()) && CurrentPage > 1)
+        // Check if we'll be empty BEFORE reload
+        if (users?.Count == 1 && CurrentPage > 1)
         {
             CurrentPage--;
         }

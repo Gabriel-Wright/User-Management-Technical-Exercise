@@ -1,6 +1,8 @@
 namespace UserManagement.UI.Exceptions
 {
 
+    //Throw this exception for API related errors
+    //Error message sent shown on front end.
     public class UserApiException : Exception
 
     {
