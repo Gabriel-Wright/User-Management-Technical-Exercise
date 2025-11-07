@@ -25,8 +25,10 @@ public static class ServiceCollectionExtensions
             // MySQL for prod
             try
             {
+                Console.WriteLine("Connecting to DB with connection string: " + connectionString);
+                Console.WriteLine("Using MySQL Server Version: " + configuration["MySQL:ServerVersion"]);
                 services.AddDbContext<DataContext>(options =>
-                    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+                    options.UseMySql(connectionString, new MySqlServerVersion(configuration["MySQL:ServerVersion"])));
             }
             catch (Exception ex)
             {

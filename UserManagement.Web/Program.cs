@@ -189,8 +189,8 @@ namespace UserManagement.Web
         {
             // Try environment variables first (for containerized deployment)
             string? envVar = env.IsDevelopment()
-                ? Environment.GetEnvironmentVariable("UI_URL_DEV")
-                : Environment.GetEnvironmentVariable("UI_URL_PROD");
+                ? Environment.GetEnvironmentVariable("UI_UMS_URL_DEV")
+                : Environment.GetEnvironmentVariable("UI_UMS_URL_PROD");
 
             if (!string.IsNullOrWhiteSpace(envVar))
             {

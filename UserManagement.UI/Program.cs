@@ -8,7 +8,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-//Have ommitted environment variable check from UI layer - for simplicities sake.
+//Since static files - just use configuration value directly
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException("Missing 'ApiBaseUrl' in configuration.");
 
@@ -16,7 +16,7 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(apiBaseUrl)
 });
-
+Console.WriteLine($"Set API Base URL: {apiBaseUrl}");
 // API services
 builder.Services.AddScoped<IUserApiService, UserApiService>();
 builder.Services.AddScoped<IUserAuditApiService, UserAuditApiService>();
