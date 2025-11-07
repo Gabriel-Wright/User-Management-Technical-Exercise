@@ -11,6 +11,9 @@ public static class UserAuditDtoMapper
         {
             Id = audit.Id,
             UserId = audit.UserId,
+            UserForename = audit.UserForename!,
+            UserSurname = audit.UserSurname!,
+            UserEmail = audit.UserEmail!,
             LoggedAt = audit.LoggedAt,
             Action = audit.Action.ToString(),
             Changes = audit.Changes?.Select(c => new UserAuditChangeDto

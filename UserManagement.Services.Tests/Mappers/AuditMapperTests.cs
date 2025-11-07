@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using UserManagement.Models;
 using UserManagement.Services.Domain;
@@ -14,6 +15,7 @@ public class AuditMapperTests
         {
             Id = 1,
             UserEntityId = 100,
+            UserEntity = new UserEntity { Id = 1, Forename = "Nav", Surname = "Test", Email = "nav@test.com" },
             LoggedAt = new DateTime(2023, 1, 1),
             AuditAction = "Deleted",
         };
@@ -34,6 +36,7 @@ public class AuditMapperTests
         {
             Id = 1,
             UserEntityId = 100,
+            UserEntity = new UserEntity(),
             LoggedAt = new DateTime(2023, 1, 1),
             AuditAction = "Deleted",
         };

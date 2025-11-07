@@ -149,7 +149,7 @@ public class UserService : IUserService
             User = user
         });
 
-        return UserMapper.ToDomainUser(userEntity);
+        return user;
     }
 
     public async Task<User> UpdateUserAsync(User user)

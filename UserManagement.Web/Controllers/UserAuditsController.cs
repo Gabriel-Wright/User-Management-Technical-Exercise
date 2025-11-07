@@ -24,7 +24,7 @@ public class UserAuditsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllAudits([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        Log.Information("Feching all audits for page {page} of size {size}", page, pageSize);
+        Log.Information("Fetching all audits for page {page} of size {size}", page, pageSize);
         (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAllUserAudits(page, pageSize);
 
         var result = new PagedResult<UserAuditDto>

@@ -31,7 +31,9 @@ namespace UserManagement.Services.Domain.Implementations
             Log.Debug("Fetching paged audits. Page: {page}, num per page: {size}", page, pageSize);
 
             var query = _dataContext.GetAll<UserAuditEntity>()
+            .AsTracking()
                 .Include(a => a.Changes)
+                .Include(a => a.UserEntity)
                 .OrderByDescending(a => a.LoggedAt);
 
             var totalCount = await query.CountAsync();
@@ -57,6 +59,7 @@ namespace UserManagement.Services.Domain.Implementations
 
             var query = _dataContext.GetAll<UserAuditEntity>()
             .Where(a => a.UserEntityId == id)
+            .Include(a => a.UserEntity)
             .Include(a => a.Changes)
                 .OrderByDescending(a => a.LoggedAt);
 
@@ -87,26 +90,13 @@ namespace UserManagement.Services.Domain.Implementations
 
             var changes = new List<UserAuditChangeEntity>();
 
-            void AddChange(string field, string before, string after)
-            {
-                if (before != after)
-                {
-                    changes.Add(new UserAuditChangeEntity
-                    {
-                        AuditId = audit.Id,
-                        Field = field,
-                        Before = before,
-                        After = after
-                    });
-                }
-            }
 
-            AddChange("Forename", oldUser.Forename, newUser.Forename);
-            AddChange("Surname", oldUser.Surname, newUser.Surname);
-            AddChange("Email", oldUser.Email, newUser.Email);
-            AddChange("Role", oldUser.Role.ToString(), newUser.Role.ToString());
-            AddChange("IsActive", oldUser.IsActive.ToString(), newUser.IsActive.ToString());
-            AddChange("BirthDate", oldUser.BirthDate.ToString("yyyy-MM-dd"), newUser.BirthDate.ToString("yyyy-MM-dd"));
+            AddChange(changes, audit.Id, "Forename", oldUser.Forename, newUser.Forename);
+            AddChange(changes, audit.Id, "Surname", oldUser.Surname, newUser.Surname);
+            AddChange(changes, audit.Id, "Email", oldUser.Email, newUser.Email);
+            AddChange(changes, audit.Id, "Role", oldUser.Role.ToString(), newUser.Role.ToString());
+            AddChange(changes, audit.Id, "IsActive", oldUser.IsActive.ToString(), newUser.IsActive.ToString());
+            AddChange(changes, audit.Id, "BirthDate", oldUser.BirthDate.ToString("yyyy-MM-dd"), newUser.BirthDate.ToString("yyyy-MM-dd"));
 
             foreach (var change in changes)
             {
@@ -129,51 +119,13 @@ namespace UserManagement.Services.Domain.Implementations
             await _dataContext.CreateAsync(audit);
             await SaveAuditChangesAsync();
 
-            var changes = new List<UserAuditChangeEntity>
-            {
-                new UserAuditChangeEntity
-                {
-                    AuditId = audit.Id,
-                    Field = "Forename",
-                    Before = string.Empty,
-                    After = user.Forename
-                },
-                new UserAuditChangeEntity
-                {
-                    AuditId = audit.Id,
-                    Field = "Surname",
-                    Before = string.Empty,
-                    After = user.Surname
-                },
-                new UserAuditChangeEntity
-                {
-                    AuditId = audit.Id,
-                    Field = "Email",
-                    Before = string.Empty,
-                    After = user.Email
-                },
-                new UserAuditChangeEntity
-                {
-                    AuditId = audit.Id,
-                    Field = "Role",
-                    Before = string.Empty,
-                    After = user.Role.ToString()
-                },
-                new UserAuditChangeEntity
-                {
-                    AuditId = audit.Id,
-                    Field = "IsActive",
-                    Before = string.Empty,
-                    After = user.IsActive.ToString()
-                },
-                new UserAuditChangeEntity
-                {
-                    AuditId = audit.Id,
-                    Field = "BirthDate",
-                    Before = string.Empty,
-                    After = user.BirthDate.ToString("yyyy-MM-dd")
-                }
-            };
+            var changes = new List<UserAuditChangeEntity>();
+            AddChange(changes, audit.Id, "Forename", string.Empty, user.Forename);
+            AddChange(changes, audit.Id, "Surname", string.Empty, user.Surname);
+            AddChange(changes, audit.Id, "Email", string.Empty, user.Email);
+            AddChange(changes, audit.Id, "Role", string.Empty, user.Role.ToString());
+            AddChange(changes, audit.Id, "IsActive", string.Empty, user.IsActive.ToString());
+            AddChange(changes, audit.Id, "BirthDate", string.Empty, user.BirthDate.ToString("yyyy-MM-dd"));
 
             foreach (var change in changes)
             {
@@ -183,6 +135,21 @@ namespace UserManagement.Services.Domain.Implementations
 
             await SaveAuditChangesAsync();
         }
+
+        private void AddChange(List<UserAuditChangeEntity> changes, long auditId, string field, string before, string after)
+        {
+            if (before != after)
+            {
+                changes.Add(new UserAuditChangeEntity
+                {
+                    AuditId = auditId,
+                    Field = field,
+                    Before = before,
+                    After = after
+                });
+            }
+        }
+
 
         public async Task CreateUserDeletedAuditAsync(long userId)
         {

@@ -12,12 +12,14 @@ public class UserAuditEntity
     [Required]
     public long UserEntityId { get; set; }//Foreign Key Column
 
+    [Required]
     [ForeignKey("UserEntityId")]
-    public UserEntity UserEntity { get; set; } = default!;
+    public UserEntity? UserEntity { get; set; }
     [Required]
     public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
     [Required]
     public String AuditAction { get; set; } = default!;
     //This won't be a column -> this handled by EF and shows the relationship
     public ICollection<UserAuditChangeEntity> Changes { get; set; } = new List<UserAuditChangeEntity>();
+
 }

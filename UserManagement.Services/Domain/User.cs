@@ -24,7 +24,7 @@ public class User
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email format")]
     [StringLength(100)]
-    public String Email { get; set; } = default!;
+    public string Email { get; set; } = default!;
     public UserRole Role { get; set; } = UserRole.User;
     public bool IsActive { get; set; }
 

@@ -14,6 +14,9 @@ public static class UserAuditMapper
         {
             Id = auditEntity.Id,
             UserId = auditEntity.UserEntityId,
+            UserForename = auditEntity.UserEntity?.Forename ?? "",
+            UserSurname = auditEntity.UserEntity?.Surname ?? "",
+            UserEmail = auditEntity.UserEntity?.Email ?? "",
             LoggedAt = auditEntity.LoggedAt,
             Action = Enum.Parse<AuditAction>(auditEntity.AuditAction, ignoreCase: true),
             Changes = auditEntity.Changes?
