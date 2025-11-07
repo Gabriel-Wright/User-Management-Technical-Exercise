@@ -1,4 +1,23 @@
+# User Management System - Technical Exercise
+
+This is my solution to the UMS Technical Exercise.
+I implemented all the standard and advanced features to the best of my ability.
+I altered the architecture project (working on the expert tasks), introducing a separate UI layer made in Blazor.
+
+- UserManagement.Data: Data access layer with EF Core
+- UserManagement.Services: Business logic and domain services
+- UserManagement.Web: Controller layer hosting the API
+- UserManagement.Data: Separate UI front end that accesses the API
+
 ## Architectural Changes
+
+Overall my intention with this project was to ensure there was good separation between layers.
+I ensure distinction between the Data Layer and Domain Service layer for business logic, and carry this idea up through each stacks.
+The reason for this approach is:
+
+-   It makes it easier to scale each layer independently.
+-   I get extra flexibility, e.g. I could swap Blazor for React/Angular without touching the API
+-   Extra security, I can Validate inputs and requests at each layer.
 
 ### UI Layer
 
@@ -9,13 +28,22 @@
 ### Dev Environment vs Production Environment
 
 This repo can be run in a Development Environment or production Environment, this is determined by the
-`ASPNETCORE_ENVIRONMENT` variable. Or alternatively, when running this project in VSCode or by dotnet run, the project will be run in dev mode - when running by a released build i.e. `dotnet publish` the release will use the production environment by default.
+`ASPNETCORE_ENVIRONMENT` variable.
 
-### In Memory DB and Deployed MySQL DB
+### MySQL DB
 
-Our Development Environment uses an in memory DB, whereas the Production Environment is expected to use a MySQL DB. The details to connect to this MySQL DB must be passed via environment variables that are detailed below.
+Our Development Environment uses an in memory DB, whereas the Production Environment is expected to use a MySQL DB. The details to connect to this MySQL DB must be passed via environment variables.
 
-# How to Setup
+### EF Migration
+
+EF Migration is configured for this project - meaning we can generate SQL scripts to create or update database schemas... in line with the Entities present in our `/Data` Project.
+
+### Additional Packages/Tools
+
+-   BlazorWebAssembly
+-   Serilog Logging
+
+## How to Setup
 
 Begin by cloning the repository
 
@@ -23,9 +51,7 @@ Begin by cloning the repository
 git clone https://github.com/Gabriel-Wright/User-Management-Technical-Exercise
 ```
 
-My Developer Environment uses an in Memory DB, whereas Production Environment must connect to a MySQL DB.
-
-## Developer Environment
+## Developer Environment -- FAST SETUP
 
 For the developer environment, simply open two terminals.
 
@@ -46,9 +72,9 @@ cd UserManagement.UI
 dotnet run
 ```
 
-With Developer default environment, these two different projects should connect.
+Working in the Developer environment - these two different projects should connect.
 
-## Production Environment
+## Production Environment -- LONGER SETUP
 
 The Production Environment uses a MySQL DB layer. Setup for production is more involved,
 there are 3 main steps.
@@ -122,7 +148,7 @@ set `UI_UMS_URL_PROD` e.g.
 export UI_UMS_URL_PROD="http://localhost:5085"
 ```
 
-#### 2.2 SET ApiBaseUrl ENVIRONMENT VARAIBLE
+#### 2.2 SET ApiBaseUrl
 
 Within `appsettings.Production.json` in `UserManagement.UI`, set `ApiBaseUrl` equal to the expected
 you will be hosting the api app on + `/api/`
@@ -143,7 +169,7 @@ Navigate to the root of this repo, and publish the API (Web) project as follows:
 dotnet publish UserManagement.Web/UserManagement.Web.csproj -c Release -o ./publish
 ```
 
-#### 3.2 Running API Layer on appropriate port
+#### 3.2 Running API Layer on appropriate URL
 
 Navigate to the generated `.dll` files under `/publish`.
 Run `UserManagement.Web.dll` with `dotnet`, using the same URL as we used for `UI_API_PROD`.
@@ -173,7 +199,7 @@ Navigate to the root of this repo again, and publish the UI Project as follows:
 dotnet publish UserManagement.UI/UserManagement.UI.csproj -c Release -o ./publish
 ```
 
-#### 3.4
+#### 3.4 Run UI on appropriate URL
 
 Static files can be found under `/publish/wwwroot`.
 Hosted on the same URL as we used for `API_UMS_URL_PROD`.
@@ -188,10 +214,10 @@ dotnet serve --p {INSERT MATCHING PORT TO THAT USED IN UI_UMS_API_PROD}
 ### Success!
 
 Hopefully your two layers should be connected.
-I have left the test data that originally came with this solution in.
+I have left in the test data that originally came with this solution.
 
-## Packages added
+### Thank you
 
--   Serilog.AspNetCore — Structured logging support
--   Serilog.Sinks.File — File-based log output
--   Serilog.Sinks.Console — Console log output
+Thank you for reviewing my project. I enjoyed working on it :) . I look forward to any feedback I receive.
+
+-   Gabriel
