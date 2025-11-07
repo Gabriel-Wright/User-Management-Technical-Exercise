@@ -21,20 +21,9 @@ public class CreateUserFormTests : TestContext
     }
 
     [Fact]
-    public void CreateUserForm_WhenNotVisible_RendersNothing()
-    {
-        var cut = RenderComponent<CreateUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, false));
-
-        cut.Markup.Should().BeEmpty();
-    }
-
-    [Fact]
     public void CreateUserForm_WhenVisible_ShowsEmptyForm()
     {
-        var cut = RenderComponent<CreateUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true));
-
+        var cut = RenderComponent<CreateUserForm>();
         cut.Markup.Should().Contain("Create User");
         var inputs = cut.FindAll("input[class='form-control']");
         inputs.Should().BeEmpty();
@@ -60,7 +49,6 @@ public class CreateUserFormTests : TestContext
             .ReturnsAsync(newUser);
 
         var cut = RenderComponent<CreateUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.OnCreated, (UserDto u) => { onCreatedCalled = true; }));
 
         cut.Find("#forename").Change("Alice");
@@ -88,8 +76,7 @@ public class CreateUserFormTests : TestContext
             .Setup(s => s.CreateUserAsync(It.IsAny<UserCreateDto>()))
             .ThrowsAsync(new UserApiException("Conflict", 409));
 
-        var cut = RenderComponent<CreateUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true));
+        var cut = RenderComponent<CreateUserForm>();
 
         cut.Find("#forename").Change("Alice");
         cut.Find("#surname").Change("Smith");
@@ -109,7 +96,6 @@ public class CreateUserFormTests : TestContext
         var onCloseCalled = false;
 
         var cut = RenderComponent<CreateUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.OnClose, () => { onCloseCalled = true; }));
 
         cut.Find("button.btn-secondary").Click();

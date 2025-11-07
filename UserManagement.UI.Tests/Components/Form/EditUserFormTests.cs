@@ -21,26 +21,13 @@ public class EditUserFormTests : TestContext
         Services.AddSingleton(_mockUserService.Object);
     }
 
+
     [Fact]
-    public void EditUserForm_WhenNotVisible_RendersNothing()
+    public void EditUserForm_PopulatesFormWithUserData()
     {
         var user = CreateTestUser();
 
         var cut = RenderComponent<EditUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, false)
-            .Add(p => p.User, user));
-
-        //shouldn't be visible
-        cut.Markup.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void EditUserForm_WhenVisible_PopulatesFormWithUserData()
-    {
-        var user = CreateTestUser();
-
-        var cut = RenderComponent<EditUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         //User gets loaded in properly
@@ -48,25 +35,6 @@ public class EditUserFormTests : TestContext
         cut.Markup.Should().Contain("Thriller@Man.com");
         cut.Markup.Should().Contain("Michael");
     }
-
-    //If more time - would figure out this.
-    // [Fact]
-    // public async Task EditUserForm_WhenValidSubmit_CallsApiService()
-    // {
-    //     var user = CreateTestUser();
-    //     var updatedUser = CreateTestUser();
-    //     updatedUser.Surname = "Jordan";
-    //     var onUpdatedCalled = false;
-
-    //     _mockUserService
-    //         .Setup(s => s.PatchUserAsync(user.Id, It.IsAny<UserPatchDto>()))
-    //         .ReturnsAsync(updatedUser);
-    //     _mockUserService.Verify(s => s.PatchUserAsync(
-    //         user.Id,
-    //         It.Is<UserPatchDto>(dto => dto.Surname == "Jordan")
-    //     ), Times.Once);
-    //     onUpdatedCalled.Should().BeTrue();
-    // }
 
     [Fact]
     public async Task EditUserForm_WhenUpdateFails409_ShowsConflictError()
@@ -78,7 +46,6 @@ public class EditUserFormTests : TestContext
             .ThrowsAsync(new UserApiException("Conflict", 409));
 
         var cut = RenderComponent<EditUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         await cut.Find("form").SubmitAsync();
@@ -96,7 +63,6 @@ public class EditUserFormTests : TestContext
             .ThrowsAsync(new UserApiException("Not found", 404));
 
         var cut = RenderComponent<EditUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         await cut.Find("form").SubmitAsync();
@@ -111,7 +77,6 @@ public class EditUserFormTests : TestContext
         var onCloseCalled = false;
 
         var cut = RenderComponent<EditUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user)
             .Add(p => p.OnClose, () => { onCloseCalled = true; }));
 

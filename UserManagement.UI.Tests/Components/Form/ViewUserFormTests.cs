@@ -8,25 +8,11 @@ namespace UserManagement.UI.Tests.Components;
 public class ViewUserFormTests : TestContext
 {
     [Fact]
-    public void ViewUserForm_WhenNotVisible_RendersNothing()
+    public void ViewUserForm_DisplaysUserDetails()
     {
         var user = CreateTestUser();
 
         var cut = RenderComponent<ViewUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, false)
-            .Add(p => p.User, user));
-
-        //shouldn't be visible
-        cut.Markup.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void ViewUserForm_WhenVisible_DisplaysUserDetails()
-    {
-        var user = CreateTestUser();
-
-        var cut = RenderComponent<ViewUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         cut.Markup.Should().Contain("John");
@@ -41,7 +27,6 @@ public class ViewUserFormTests : TestContext
         var user = CreateTestUser(isActive: true);
 
         var cut = RenderComponent<ViewUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         cut.Markup.Should().Contain("Active");
@@ -54,7 +39,6 @@ public class ViewUserFormTests : TestContext
         var user = CreateTestUser(isActive: false);
 
         var cut = RenderComponent<ViewUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         cut.Markup.Should().Contain("Inactive");
@@ -68,11 +52,10 @@ public class ViewUserFormTests : TestContext
         var onCloseCalled = false;
 
         var cut = RenderComponent<ViewUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user)
             .Add(p => p.OnClose, () => { onCloseCalled = true; }));
 
-        cut.Find("button.btn-close").Click();
+        cut.Find("button.btn-secondary").Click();
 
         onCloseCalled.Should().BeTrue();
     }

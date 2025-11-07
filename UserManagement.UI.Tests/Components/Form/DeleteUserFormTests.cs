@@ -20,24 +20,11 @@ public class DeleteUserFormTests : TestContext
     }
 
     [Fact]
-    public void DeleteUserForm_WhenNotVisible_RendersNothing()
-    {
-        var user = CreateTestUser();
-
-        var cut = RenderComponent<DeleteUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, false)
-            .Add(p => p.User, user));
-
-        cut.Markup.Should().BeEmpty();
-    }
-
-    [Fact]
     public void DeleteUserForm_WhenVisible_DisplaysConfirmation()
     {
         var user = CreateTestUser();
 
         var cut = RenderComponent<DeleteUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         cut.Markup.Should().Contain("Are you sure you want to delete");
@@ -55,7 +42,6 @@ public class DeleteUserFormTests : TestContext
             .Returns(Task.CompletedTask);
 
         var cut = RenderComponent<DeleteUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user)
             .Add(p => p.OnDeleted, async (UserDto u) => { onDeletedCalled = true; await Task.CompletedTask; })
         );
@@ -75,7 +61,6 @@ public class DeleteUserFormTests : TestContext
             .ThrowsAsync(new UserApiException("Not found", 404));
 
         var cut = RenderComponent<DeleteUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user));
 
         await cut.Find("button.btn-danger").ClickAsync(new());
@@ -90,7 +75,6 @@ public class DeleteUserFormTests : TestContext
         var onCloseCalled = false;
 
         var cut = RenderComponent<DeleteUserForm>(parameters => parameters
-            .Add(p => p.IsVisible, true)
             .Add(p => p.User, user)
             .Add(p => p.OnClose, () => { onCloseCalled = true; }));
 
