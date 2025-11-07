@@ -27,6 +27,7 @@ namespace UserManagement.Services.Domain.Implementations
                 .AsTracking()
                 .Include(a => a.UserEntity)
                 .Include(a => a.Changes)
+                .IgnoreQueryFilters()
                 .AsQueryable();
 
             if (passedQuery.Action.HasValue)
@@ -72,6 +73,7 @@ namespace UserManagement.Services.Domain.Implementations
             .AsTracking()
                 .Include(a => a.Changes)
                 .Include(a => a.UserEntity)
+                .IgnoreQueryFilters()
                 .OrderByDescending(a => a.LoggedAt);
 
             var totalCount = await query.CountAsync();
@@ -99,6 +101,7 @@ namespace UserManagement.Services.Domain.Implementations
             .Where(a => a.UserEntityId == id)
             .Include(a => a.UserEntity)
             .Include(a => a.Changes)
+            .IgnoreQueryFilters()
                 .OrderByDescending(a => a.LoggedAt);
 
             var totalCount = await query.CountAsync();

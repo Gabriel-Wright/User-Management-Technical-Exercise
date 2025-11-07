@@ -200,20 +200,20 @@ public class UserService : IUserService
         return UserMapper.ToDomainUser(existing);
     }
 
-    public async Task DeleteUserAsync(long id)
-    {
-        Log.Debug("Deleting user with Id {id}.", id);
-        var existing = await _dataAccess.GetAll<UserEntity>()
-            .FirstOrDefaultAsync(u => u.Id == id);
+    // public async Task DeleteUserAsync(long id)
+    // {
+    //     Log.Debug("Deleting user with Id {id}.", id);
+    //     var existing = await _dataAccess.GetAll<UserEntity>()
+    //         .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (existing == null)
-        {
-            Log.Error("User with Id {id} not found.", id);
-            throw new KeyNotFoundException($"User with ID {id} not found.");
-        }
+    //     if (existing == null)
+    //     {
+    //         Log.Error("User with Id {id} not found.", id);
+    //         throw new KeyNotFoundException($"User with ID {id} not found.");
+    //     }
 
-        _dataAccess.Delete(existing);
-    }
+    //     _dataAccess.Delete(existing);
+    // }
 
     public async Task SoftDeleteUserAsync(long id)
     {
