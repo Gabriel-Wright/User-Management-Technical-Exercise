@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Build.Framework;
 using Serilog;
-using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web;
 using UserManagement.Web.Dtos;
@@ -36,6 +36,7 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        Log.Information("Fetching all users on GET api/users");
         var users = await _userService.GetAllAsync();
         if (users == null || !users.Any()) return NotFound("No users found.");
         var dtos = users.Select(u => UserDtoMapper.ToDto(u));
@@ -52,7 +53,7 @@ public class UsersController : ControllerBase
     [HttpGet("query")]
     public async Task<IActionResult> GetUsersByQuery([FromQuery] UserQueryDto queryDto)
     {
-        // Map DTO to domain query
+        Log.Information("Fetching users by query on GET api/users/query");
         var query = new UserQuery
         {
             Page = queryDto.Page,
@@ -76,44 +77,6 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
-
-    /// <summary>
-    /// Gets all users that are either active or not active
-    /// </summary>
-    /// <param name="isActive">Are users active or not</param>
-    /// <returns>Either all active or inactive users</returns>
-    [HttpGet("status")]
-    public async Task<IActionResult> GetUsersByStatus([FromQuery] bool isActive)
-    {
-        var users = await _userService.FilterByActiveAsync(isActive);
-        if (users == null || !users.Any()) return NotFound($"No {(isActive ? "active" : "inactive")} users found.");
-
-        var dtos = users.Select(UserDtoMapper.ToDto);
-        return Ok(dtos);
-    }
-
-    /// <summary>
-    /// Very specific search operation - end point searching by both forename, and surname.
-    /// Way too specific - need to redesign.
-    /// </summary>
-    /// <param name="forename">First name of user - must be specified</param>
-    /// <param name="surname">Surname of user - also must be specified</param>
-    /// <returns>All users of that specific first name and surname</returns>
-    [HttpGet("search")]
-    public async Task<IActionResult> GetUsersByName([FromQuery] string forename, [FromQuery] string surname)
-    {
-        if (string.IsNullOrWhiteSpace(forename) || string.IsNullOrWhiteSpace(surname))
-            return BadRequest("Both forename and surname are required.");
-
-        var users = await _userService.GetByNameAsync(forename, surname);
-
-        if (users == null || !users.Any())
-            return NotFound($"No users found with name {forename} {surname}.");
-
-        var dtos = users.Select(UserDtoMapper.ToDto);
-        return Ok(dtos);
-    }
-
     /// <summary>
     /// Gets the specific user with id `id`.
     /// </summary>
@@ -122,6 +85,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id:long}")]
     public async Task<IActionResult> GetUsersById(long id)
     {
+        Log.Information("Fetching user by ID {id} on GET api/users/{id}", id);
         if (id <= 0) return BadRequest("User ID < 0, invalid Id.");
 
         var user = await _userService.GetByIdAsync(id);
@@ -139,6 +103,7 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddUser([FromBody] UserCreateDto createDto)
     {
+        Log.Information("Creating new user on POST api/users with data {@createDto}", createDto);
         if (!ModelState.IsValid)
         {
             //Could have more detail here
@@ -162,6 +127,7 @@ public class UsersController : ControllerBase
     [HttpPut("{id:long}")]
     public async Task<IActionResult> UpdateUserPut(long id, [FromBody] UserDto dto)
     {
+        Log.Information("Updating user of ID {id} on PUT api/users/{id} with data {@dto}", id, dto);
         if (!ModelState.IsValid)
         {
             Log.Warning("{@ModelState}", ModelState);
@@ -187,7 +153,7 @@ public class UsersController : ControllerBase
     [HttpPatch("{id:long}")]
     public async Task<IActionResult> UpdateUserPatch(long id, [FromBody] UserPatchDto patchDto)
     {
-
+        Log.Information("Patching user of ID {id} on PATCH api/users/{id} with data {@patchDto}", id, patchDto);
         if (patchDto == null) return BadRequest("Patch data is required.");
 
         if (!ModelState.IsValid)
@@ -209,22 +175,6 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes the user of id `id`.
-    /// </summary>
-    /// <param name="id">`id` of the user you wish to delete</param>
-    /// <returns>Null - no user to return. 204 if successful</returns>
-    [HttpDelete("{id:long}")]
-    public async Task<IActionResult> DeleteUser(long id)
-    {
-        if (id <= 0) return BadRequest("Invalid user ID.");
-
-        await _userService.DeleteUserAsync(id);
-        await _userService.SaveAsync();
-
-        return NoContent(); //204 is standard successful DELETE - no body returned
-    }
-
-    /// <summary>
     /// Soft deletes the user of id `id`. This means the user won't appear in any queries,
     /// but is not removed from the database.
     /// </summary>
@@ -233,6 +183,7 @@ public class UsersController : ControllerBase
     [HttpDelete("soft/{id:long}")]
     public async Task<IActionResult> SoftDeleteUser(long id)
     {
+        Log.Information("Soft deleting user of ID {id} on DELETE api/users/soft/{id}", id);
         if (id <= 0) return BadRequest("Invalid user ID.");
 
         await _userService.SoftDeleteUserAsync(id);

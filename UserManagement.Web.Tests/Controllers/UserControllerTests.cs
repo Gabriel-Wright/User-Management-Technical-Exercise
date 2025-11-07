@@ -83,72 +83,6 @@ public class UserControllerTests
 
         result.Should().BeOfType<BadRequestObjectResult>();
     }
-
-    [Fact]
-    public async Task GetUsersByStatus_WhenActiveUsersExist_ReturnsOkWithActiveUsers()
-    {
-        var users = new List<User>
-        {
-            new() { Id = 1, Forename = "John", Surname = "Doe", Email = "john@example.com", IsActive = true, BirthDate = DateTime.Now }
-        };
-        _mockService.Setup(s => s.FilterByActiveAsync(true)).ReturnsAsync(users);
-
-        var result = await _controller.GetUsersByStatus(true);
-
-        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var dtos = okResult.Value as IEnumerable<UserDto>;
-        dtos.Should().HaveCount(1);
-        dtos!.All(u => u.IsActive).Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetUsersByStatus_WhenNoActiveUsers_ReturnsNotFound()
-    {
-        _mockService.Setup(s => s.FilterByActiveAsync(true)).ReturnsAsync(new List<User>());
-
-        var result = await _controller.GetUsersByStatus(true);
-
-        result.Should().BeOfType<NotFoundObjectResult>();
-    }
-
-    [Fact]
-    public async Task GetUsersByName_WhenUsersFound_ReturnsOk()
-    {
-        var users = new List<User>
-        {
-            new() { Id = 1, Forename = "John", Surname = "Doe", Email = "john@example.com", IsActive = true, BirthDate = DateTime.Now }
-        };
-        _mockService.Setup(s => s.GetByNameAsync("John", "Doe")).ReturnsAsync(users);
-
-        var result = await _controller.GetUsersByName("John", "Doe");
-
-        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var dtos = okResult.Value as IEnumerable<UserDto>;
-        dtos.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task GetUsersByName_WhenNoUsersFound_ReturnsNotFound()
-    {
-        _mockService.Setup(s => s.GetByNameAsync("NonExistent", "User")).ReturnsAsync(new List<User>());
-
-        var result = await _controller.GetUsersByName("NonExistent", "User");
-
-        // Assert
-        result.Should().BeOfType<NotFoundObjectResult>();
-    }
-
-    [Fact]
-    public async Task GetUsersByName_WhenForenameEmpty_ReturnsBadRequest()
-    {
-        var result = await _controller.GetUsersByName("", "Doe");
-
-        //If we fail with bad request - we should NOT call the service layer.
-        result.Should().BeOfType<BadRequestObjectResult>();
-
-        _mockService.Verify(s => s.GetByNameAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-    }
-
     [Fact]
     public async Task GetUsersByQuery_WhenUsersExist_ReturnsOkWithUsers()
     {
@@ -439,28 +373,6 @@ public class UserControllerTests
 
         result.Should().BeOfType<NotFoundObjectResult>();
         _mockService.Verify(s => s.UpdateUserAsync(It.IsAny<User>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task DeleteUser_WhenUserExists_ReturnsNoContent()
-    {
-        _mockService.Setup(s => s.DeleteUserAsync(1)).Returns(Task.CompletedTask);
-
-        var result = await _controller.DeleteUser(1);
-
-        result.Should().BeOfType<NoContentResult>();
-        _mockService.Verify(s => s.DeleteUserAsync(1), Times.Once);
-    }
-
-    [Fact]
-    public async Task DeleteUser_WhenUserNotFound_ThrowsKeyNotFoundException()
-    {
-        _mockService.Setup(s => s.DeleteUserAsync(999))
-            .ThrowsAsync(new KeyNotFoundException("User not found"));
-
-        Func<Task> act = async () => await _controller.DeleteUser(999);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
     [Fact]

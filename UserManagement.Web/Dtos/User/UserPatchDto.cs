@@ -29,7 +29,7 @@ namespace UserManagement.Web.Dtos
 
         public bool? IsActive { get; set; }
 
-        [DefaultValue("1990-01-01")]
+        [DefaultValue("1990-01-01")] //helps with swagger defaults
         [BirthDate]
         public DateTime? BirthDate { get; set; }
     }

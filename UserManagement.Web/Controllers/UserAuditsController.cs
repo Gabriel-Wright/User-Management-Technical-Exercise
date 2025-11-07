@@ -9,14 +9,19 @@ using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Web;
 using UserManagement.Web.Dtos;
 
+/// <summary>
+/// Controller for managing user audits
+/// Less authentication here as if audits are created, they are from valid users
+/// trust our DB in this instance more so than user data endpoints.
+/// </summary>
 [Route("api/users/audits")]
 public class UserAuditsController : ControllerBase
 {
-    private readonly IAuditService auditService;
+    private readonly IAuditService _auditService;
 
     public UserAuditsController(IAuditService auditService)
     {
-        this.auditService = auditService;
+        this._auditService = auditService;
     }
 
     /// <summary>
@@ -25,30 +30,31 @@ public class UserAuditsController : ControllerBase
     [HttpGet("query")]
     public async Task<IActionResult> GetUsersByQuery([FromQuery] UserAuditQueryDto queryDto)
     {
+
         AuditAction? action = null;
         if (!string.IsNullOrWhiteSpace(queryDto.Action))
             action = Enum.Parse<AuditAction>(queryDto.Action, ignoreCase: true);
 
-        {
-            var query = new UserAuditQuery
-            {
-                Page = queryDto.Page,
-                PageSize = queryDto.PageSize,
-                SearchTerm = queryDto.SearchTerm,
-                Action = action,
-                // No sorting implemented yet
-            };
-            (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAuditsByQueryAsync(query);
-            var result = new PagedResult<UserAuditDto>
-            {
-                Items = audits.Select(UserAuditDtoMapper.ToDto).ToList(),
-                TotalCount = totalCount,
-                PageNumber = query.Page,
-                PageSize = query.PageSize
-            };
 
-            return Ok(result);
-        }
+        var query = new UserAuditQuery
+        {
+            Page = queryDto.Page,
+            PageSize = queryDto.PageSize,
+            SearchTerm = queryDto.SearchTerm,
+            Action = action,
+            //No sorting implemented
+        };
+        (IEnumerable<UserAudit> audits, int totalCount) = await _auditService.GetAuditsByQueryAsync(query);
+        var result = new PagedResult<UserAuditDto>
+        {
+            Items = audits.Select(UserAuditDtoMapper.ToDto).ToList(),
+            TotalCount = totalCount,
+            PageNumber = query.Page,
+            PageSize = query.PageSize
+        };
+
+        return Ok(result);
+
     }
 
 
@@ -63,7 +69,7 @@ public class UserAuditsController : ControllerBase
         if (userId <= 0)
             return BadRequest("Invalid user ID.");
 
-        (IEnumerable<UserAudit> audits, int totalCount) = await auditService.GetAllUserAuditsById(userId, page, pageSize);
+        (IEnumerable<UserAudit> audits, int totalCount) = await _auditService.GetAllUserAuditsById(userId, page, pageSize);
 
         var result = new PagedResult<UserAuditDto>
         {

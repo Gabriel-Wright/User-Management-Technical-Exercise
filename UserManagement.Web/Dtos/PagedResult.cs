@@ -2,8 +2,7 @@ using System;
 
 namespace UserManagement.Web;
 
-//This is used to carry results from calls on Controllers with the amount of total available, and the
-// specific pages called
+//This is used to carry results from calls on Controllers with the amount of total available
 public class PagedResult<T>
 {
     public List<T> Items { get; set; } = new();

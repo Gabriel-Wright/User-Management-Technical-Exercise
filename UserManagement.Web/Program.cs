@@ -15,140 +15,209 @@ using UserMangement.Services.Events;
 
 namespace UserManagement.Web
 {
-
+    /// <summary>
+    /// Entry point for the User Management Web API.
+    /// Configures logging, services, middleware, and environment-specific behaviour.
+    /// </summary>
     public class Program
     {
         public static void Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .CreateBootstrapLogger();
+            ConfigureBootstrapLogger();
 
             try
             {
-                Log.Information("Starting web host");
+                Log.Information("Starting web host...");
 
                 var builder = WebApplication.CreateBuilder(args);
 
-                builder.Host.UseSerilog((context, services, configuration) =>
-                configuration
-                    .ReadFrom.Configuration(context.Configuration)
-                    .Enrich.FromLogContext());
-                builder.Services.AddCors(options =>
-                {
-                    options.AddPolicy("AllowBlazorClient",
-                        policy => policy
-                            .WithOrigins(FindAllowedCorsOrigin(builder.Environment, builder.Configuration))
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                    );
-                });
-                //Add services to the container. - removing Views from this layer. Separate UI layer introduced.
-                builder.Services
-                    .AddDataAccess(builder.Configuration, builder.Environment)
-                    .AddDomainServices()
-                        .AddControllers();
-                builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
+                ConfigureHost(builder);
+                ConfigureServices(builder);
 
-                //Adding Swagger so we can check Web APIs
-                builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen(c =>
-                {
-                    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                    c.IncludeXmlComments(xmlPath);
-                });
                 var app = builder.Build();
-                app.UseCors("AllowBlazorClient");
-                app.UseMiddleware<ExceptionMiddlewareCatcher>();
 
-                //DB check prod
-                if (!builder.Environment.IsDevelopment())
-                {
-                    try
-                    {
-                        using var scope = app.Services.CreateScope();
-                        var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-
-                        if (!dbContext.Database.CanConnect())
-                        {
-                            Log.Fatal("Cannot connect to production database. Application will stop.");
-                            throw new InvalidOperationException("Cannot connect to the production database.");
-                        }
-
-                        Log.Information("Successfully connected to the production database.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Fatal(ex, "Database connection test failed. Application will stop.");
-                        throw; // Stop the app
-                    }
-                }
-
-                app.UseSerilogRequestLogging();
-
-                app.UseHsts();
-                app.UseHttpsRedirection();
-                app.UseAuthorization();
-
-                app.MapControllers();
+                ConfigureMiddleware(app);
                 ConfigureEventBusSubscriptions(app);
+                ConfigureSwagger(app, builder.Environment);
+                ValidateDatabaseConnection(app, builder.Environment);
 
-                if (builder.Environment.IsDevelopment())
-                {
-                    Log.Information("Running in Development environment");
-                    Log.Information("Swagger view enabled");
-                    app.UseSwagger();
-                    app.UseSwaggerUI();
-                }
-                else
-                {
-                    Log.Information("App started"); // production-safe log
-                }
-
+                Log.Information("Application startup complete. Running...");
                 app.Run();
-
             }
-            catch
+            catch (Exception ex)
             {
-                Log.Fatal("Application start-up failed");
+                Log.Fatal(ex, "Application failed to start correctly.");
                 throw;
             }
             finally
             {
                 Log.CloseAndFlush();
             }
-
         }
+
+        // ---------------------------------------------------------------
+        //  Logging
+        // ---------------------------------------------------------------
+
+        private static void ConfigureBootstrapLogger()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .CreateBootstrapLogger();
+        }
+
+        private static void ConfigureHost(WebApplicationBuilder builder)
+        {
+            builder.Host.UseSerilog((context, services, configuration) =>
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .Enrich.FromLogContext());
+        }
+
+        // ---------------------------------------------------------------
+        //  Service setup
+        // ---------------------------------------------------------------
+
+        private static void ConfigureServices(WebApplicationBuilder builder)
+        {
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowBlazorClient", policy =>
+                {
+                    policy
+                        .WithOrigins(FindAllowedCorsOrigin(builder.Environment, builder.Configuration))
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
+            //Data layer
+            builder.Services
+                .AddDataAccess(builder.Configuration, builder.Environment)
+                .AddDomainServices();
+
+            //Event bus - in memory
+            builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
+
+            builder.Services
+                .AddControllers()
+                .AddApplicationPart(typeof(Program).Assembly);
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    c.IncludeXmlComments(xmlPath);
+                }
+            });
+        }
+
+        // ---------------------------------------------------------------
+        //  Middleware Pipeline - catching errors from controller
+        // ---------------------------------------------------------------
+
+        private static void ConfigureMiddleware(WebApplication app)
+        {
+            app.UseCors("AllowBlazorClient");
+
+            app.UseMiddleware<ExceptionMiddlewareCatcher>();
+
+            app.UseSerilogRequestLogging();
+
+            app.UseHttpsRedirection();
+            app.UseHsts();
+
+            app.UseAuthorization();
+            app.MapControllers();
+        }
+
+        // ---------------------------------------------------------------
+        //  Swagger - Dev
+        // ---------------------------------------------------------------
+
+        private static void ConfigureSwagger(WebApplication app, IHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                Log.Information("Running in Development environment. Swagger enabled.");
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+            else
+            {
+                Log.Information("Running in Production environment.");
+            }
+        }
+
+        // ---------------------------------------------------------------
+        //  Database Validation - Prod
+        // ---------------------------------------------------------------
+
+        private static void ValidateDatabaseConnection(WebApplication app, IHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+                return;
+
+            try
+            {
+                using var scope = app.Services.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+                if (!dbContext.Database.CanConnect())
+                {
+                    Log.Fatal("Cannot connect to production database. Application will stop.");
+                    throw new InvalidOperationException("Cannot connect to the production database.");
+                }
+
+                Log.Information("Successfully connected to the production database.");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Database connection validation failed. Application will stop.");
+                throw;
+            }
+        }
+
+        // ---------------------------------------------------------------
+        //  CORS Helpers
+        // ---------------------------------------------------------------
 
         private static string FindAllowedCorsOrigin(IHostEnvironment env, IConfiguration configuration)
         {
-            //Check environment-specific env var
+            // Try environment variables first (for containerized deployment)
             string? envVar = env.IsDevelopment()
                 ? Environment.GetEnvironmentVariable("UI_URL_DEV")
                 : Environment.GetEnvironmentVariable("UI_URL_PROD");
 
-            //Use env var if set, otherwise fallback to configuration
             if (!string.IsNullOrWhiteSpace(envVar))
             {
-                Log.Information("CORs origin allowed on {Origin}", envVar);
+                Log.Information("CORS origin allowed: {Origin}", envVar);
                 return envVar;
             }
 
             string? configValue = configuration.GetValue<string>("AllowedUIOrigin");
             if (!string.IsNullOrWhiteSpace(configValue))
             {
-                Log.Information("CORs origin allowed on {Origin}", configValue);
+                Log.Information("CORS origin allowed: {Origin}", configValue);
                 return configValue;
             }
-            Log.Fatal("No CORS origin configured or defined");
+
+            Log.Fatal("No CORS origin configured or defined.");
             throw new InvalidOperationException("No CORS origin configured for the current environment.");
         }
+
+        // ---------------------------------------------------------------
+        //  Event Bus Configuration
+        // ---------------------------------------------------------------
+
         private static void ConfigureEventBusSubscriptions(WebApplication app)
         {
             var eventBus = app.Services.GetRequiredService<IEventBus>();
 
-            //Have to call this for each subscription
+            //Scoped subscription helper
             void SubscribeScoped<TEvent, TService>(Func<TService, TEvent, Task> handler)
                 where TEvent : IUserDomainEvent
                 where TService : notnull
@@ -161,12 +230,10 @@ namespace UserManagement.Web
                 });
             }
 
+            //Audit Event Subscriptions
             SubscribeScoped<UserCreatedEvent, IAuditService>((service, evt) => service.Handle(evt));
             SubscribeScoped<UserUpdatedEvent, IAuditService>((service, evt) => service.Handle(evt));
             SubscribeScoped<UserDeletedEvent, IAuditService>((service, evt) => service.Handle(evt));
         }
     }
-
-
-
 }
