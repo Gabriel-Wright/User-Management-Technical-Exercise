@@ -26,7 +26,7 @@ namespace UserManagement.Services.Domain.Implementations
             ValidateQuery(passedQuery);
 
             //Gonna include User Entity and changes here, so we are searching by Joined data.
-            var auditsQuery = _dataContext.GetAll<UserAuditEntity>()
+            var audits = _dataContext.GetAll<UserAuditEntity>()
                 .AsTracking()
                 .Include(a => a.UserEntity)
                 .Include(a => a.Changes)
@@ -36,7 +36,7 @@ namespace UserManagement.Services.Domain.Implementations
             if (passedQuery.Action.HasValue)
             {
                 var actionStr = passedQuery.Action.Value.ToString();
-                auditsQuery = auditsQuery.Where(a => a.AuditAction == actionStr);
+                audits = audits.Where(a => a.AuditAction == actionStr);
             }
 
             //simple property search on user's forename, surname, email individually
@@ -44,18 +44,18 @@ namespace UserManagement.Services.Domain.Implementations
             if (!string.IsNullOrWhiteSpace(passedQuery.SearchTerm))
             {
                 var term = passedQuery.SearchTerm.Trim().ToLower();
-                auditsQuery = auditsQuery.Where(a => a.UserEntity != null &&
+                audits = audits.Where(a => a.UserEntity != null &&
                     (a.UserEntity.Forename.ToLower().Contains(term) ||
                      a.UserEntity.Surname.ToLower().Contains(term) ||
                      a.UserEntity.Email.ToLower().Contains(term)));
             }
 
             //For now order by date as default
-            auditsQuery = auditsQuery.OrderByDescending(a => a.LoggedAt);
+            audits = audits.OrderByDescending(a => a.LoggedAt);
 
-            var totalCount = await auditsQuery.CountAsync();
+            var totalCount = await audits.CountAsync();
 
-            var pagedAudits = await auditsQuery
+            var pagedAudits = await audits
                 .Skip((passedQuery.Page - 1) * passedQuery.PageSize)
                 .Take(passedQuery.PageSize)
                 .ToListAsync();
