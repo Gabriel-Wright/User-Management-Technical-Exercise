@@ -4,20 +4,24 @@ This is my solution to the UMS Technical Exercise.
 I implemented all the standard and advanced features to the best of my ability.
 I altered the architecture project (working on the expert tasks), introducing a separate UI layer made in Blazor.
 
+<img width="600" height="500" alt="image" src="https://github.com/user-attachments/assets/ebe2c838-5e63-4e7a-a18a-67601f4b40e1" />
+
+
 - UserManagement.Data: Data access layer with EF Core
 - UserManagement.Services: Business logic and domain services
 - UserManagement.Web: Controller layer hosting the API
-- UserManagement.Data: Separate UI front end that accesses the API
+- UserManagement.UI: Separate UI front end that accesses the API
 
 ## Architectural Changes
 
 Overall my intention with this project was to ensure there was good separation between layers.
-I ensure distinction between the Data Layer and Domain Service layer for business logic, and carry this idea up through each stacks.
+I ensured distinction between the Data Layer and Domain Service layer for business logic, and carried this idea up through each layer.
 The reason for this approach is:
 
 -   It makes it easier to scale each layer independently.
--   I get extra flexibility, e.g. I could swap Blazor for React/Angular without touching the API
--   Extra security, I can Validate inputs and requests at each layer.
+-   I get extra flexibility, e.g. I could swap Blazor for React/Angular without touching the API.
+-   Extra security, I can validate inputs and requests at each layer.
+-   Separation of layers allows for isolated unit testing of business logic, controllers etc.
 
 ### UI Layer
 
@@ -27,12 +31,12 @@ The reason for this approach is:
 
 ### Dev Environment vs Production Environment
 
-This repo can be run in a Development Environment or production Environment, this is determined by the
+This repo can be run in a Development Environment or Production Environment, this is determined by the
 `ASPNETCORE_ENVIRONMENT` variable.
 
 ### MySQL DB
 
-Our Development Environment uses an in memory DB, whereas the Production Environment is expected to use a MySQL DB. The details to connect to this MySQL DB must be passed via environment variables.
+Our Development Environment uses an in memory DB, whereas the Production Environment is expected to use a MySQL DB. The details to connect to this MySQL DB must be passed via Environment Variables.
 
 ### EF Migration
 
@@ -53,7 +57,7 @@ git clone https://github.com/Gabriel-Wright/User-Management-Technical-Exercise
 
 ## Developer Environment -- FAST SETUP
 
-For the developer environment, simply open two terminals.
+For the Developer Environment, simply open two terminals.
 
 In terminal one, navigate from the root of the project to `UserManagement.Web` for the API app.
 This will be hosted on `https://localhost:7084` by default.
@@ -72,7 +76,7 @@ cd UserManagement.UI
 dotnet run
 ```
 
-Working in the Developer environment - these two different projects should connect.
+Working in the Developer Environment - these two different projects should connect.
 
 ## Production Environment -- LONGER SETUP
 
@@ -129,7 +133,7 @@ Query OK, 0 rows affected (0.010 sec)
 #### 1.5. (Optional) If there are future schema changes, can be run again to update schema
 
 ```
-cd UserManagement.data
+cd UserManagement.Data
 dotnet ef migrations script --idempotent -o UpdateDatabase.sql --startup-project ../UserManagement.Web
 ```
 
@@ -137,7 +141,7 @@ dotnet ef migrations script --idempotent -o UpdateDatabase.sql --startup-project
 
 #### 2.1 Set UI_URL Environment variable
 
-The environment variables used by the API layer to allow incoming connections from the UI layer are:
+The Environment Variables used by the API layer to allow incoming connections from the UI layer are:
 
 Development: `UI_UMS_URL_DEV`  
 Production: `UI_UMS_URL_PROD`
@@ -151,7 +155,7 @@ export UI_UMS_URL_PROD="http://localhost:5085"
 #### 2.2 SET ApiBaseUrl
 
 Within `appsettings.Production.json` in `UserManagement.UI`, set `ApiBaseUrl` equal to the expected
-you will be hosting the api app on + `/api/`
+URL will be hosting the api app on + `/api/`
 
 e.g.
 
@@ -159,7 +163,7 @@ e.g.
     "ApiBaseUrl": "https://localhost:7084/api/"
 ```
 
-### 3. Publishing the Apps and run them with the appropriate ports
+### 3. Publishing the Apps and running
 
 #### 3.1 Publishing API Layer
 
@@ -189,7 +193,7 @@ dotnet UserManagement.Web.dll
 [04:22:56 FTL] Database connection validation failed. Application will stop.
 ```
 
-If you encounter this, I would recommend reviewing your connection string environment variable `DEFAULT_UMS_CONNECTION`.
+If you encounter this, I would recommend reviewing your connection string Environment Variable `DEFAULT_UMS_CONNECTION`.
 
 #### 3.3 Publishing UI Layer
 
@@ -204,7 +208,7 @@ dotnet publish UserManagement.UI/UserManagement.UI.csproj -c Release -o ./publis
 Static files can be found under `/publish/wwwroot`.
 Hosted on the same URL as we used for `API_UMS_URL_PROD`.
 
-If testing locally (i.e. local host)
+If testing locally (i.e. localhost)
 
 ```
 cd /publish/wwwroot
