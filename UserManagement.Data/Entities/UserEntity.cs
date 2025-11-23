@@ -14,6 +14,7 @@ public class UserEntity
     public string Surname { get; set; } = default!;
     [Required, MaxLength(100)]
     public string Email { get; set; } = default!;
+    public string PasswordHash { get; set; } = default!;
     public string UserRole { get; set; } = "User";
     public bool IsActive { get; set; }
     public DateTime BirthDate { get; set; }
