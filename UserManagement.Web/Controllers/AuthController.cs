@@ -1,10 +1,12 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Data;
 using UserManagement.Models;
+using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Login;
 using UserManagement.Web.Dtos;
 
