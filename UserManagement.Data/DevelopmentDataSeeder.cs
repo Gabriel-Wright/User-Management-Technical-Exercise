@@ -12,7 +12,7 @@ namespace UserManagement.Data
     /// </summary>
     public static class DevelopmentDataSeeder
     {
-        private const string DEFAULT_PASSWORD = "!Password1";
+        private const string DEFAULT_PASSWORD = "dumbPass";
 
         public static void SeedUsers(DataContext context)
         {

@@ -13,7 +13,6 @@ public class DataContextTests
     [Fact]
     public async Task GetAll_WhenNewUserEntityAdded_MustIncludeNewUserEntity()
     {
-        // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var context = CreateContext();
 
         var entity = new UserEntity
@@ -21,15 +20,14 @@ public class DataContextTests
             Forename = "Brand New",
             Surname = "User",
             Email = "brandnewuser@example.com",
+            PasswordHash = "Pass",
             UserRole = "User",
         };
         await context.CreateAsync(entity);
         await context.SaveChangesAsync();
 
-        // Act: Invokes the method under test with the arranged parameters.
         var result = context.GetAll<UserEntity>();
 
-        // Assert: Verifies that the action of the method under test behaves as expected.
         result
             .Should().Contain(s => s.Email == entity.Email)
             .Which.Should().BeEquivalentTo(entity);
@@ -40,7 +38,7 @@ public class DataContextTests
     public async Task Update_WhenUserEntityChanged_ShouldPersistChanges()
     {
         var context = CreateContext();
-        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
+        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com", PasswordHash =  "Pass" };
         await context.CreateAsync(user);
         await context.SaveChangesAsync();
 
@@ -57,7 +55,6 @@ public class DataContextTests
     [Fact]
     public async Task GetAll_WhenDeleted_MustNotIncludeDeletedUserEntity()
     {
-        // Arrange: Initializes objects and sets the value of the data that is passed to the method under test.
         var context = CreateContext();
 
         var entity = new UserEntity
@@ -65,6 +62,7 @@ public class DataContextTests
             Forename = "Brand New",
             Surname = "User",
             Email = "brandnewuser@example.com",
+            PasswordHash = "Pass",
             UserRole = "User",
         };
         await context.CreateAsync(entity);
@@ -88,7 +86,7 @@ public class DataContextTests
     public async Task CreateAudit_WhenNewAuditAdded_ShouldBePersisted()
     {
         var context = CreateContext();
-        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
+        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com", PasswordHash =  "Pass" };
         await context.CreateAsync(user);
         await context.SaveChangesAsync();
 
@@ -112,7 +110,7 @@ public class DataContextTests
     public async Task AuditEntity_WhenDeleted_MustNotIncludeEntity()
     {
         var context = CreateContext();
-        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com" };
+        var user = new UserEntity { Forename = "Test", Surname = "User", Email = "test@user.com", PasswordHash =  "Pass" };
         await context.CreateAsync(user);
         await context.SaveChangesAsync();
 
@@ -140,7 +138,7 @@ public class DataContextTests
     public async Task CreateAuditChange_ShouldPersistAndLinkToAudit()
     {
         var context = CreateContext();
-        var user = new UserEntity { Forename = "Change", Surname = "Test", Email = "change@test.com" };
+        var user = new UserEntity { Forename = "Change", Surname = "Test", Email = "change@test.com", PasswordHash =  "Pass" };
         await context.CreateAsync(user);
         await context.SaveChangesAsync();
 
@@ -171,7 +169,7 @@ public class DataContextTests
     public async Task AuditNavigationProperty_ShouldLinkToUserEntity()
     {
         var context = CreateContext();
-        var user = new UserEntity { Forename = "Nav", Surname = "Test", Email = "nav@test.com" };
+        var user = new UserEntity { Forename = "Nav", Surname = "Test", Email = "nav@test.com", PasswordHash =   "Pass" };
         await context.CreateAsync(user);
         await context.SaveChangesAsync();
 
@@ -202,6 +200,7 @@ public class DataContextTests
             Forename = "Soft",
             Surname = "Delete",
             Email = "softdelete@example.com",
+            PasswordHash = "Pass",
             UserRole = "User",
         };
         await context.CreateAsync(entity);
@@ -236,7 +235,9 @@ public class DataContextTests
 
 public class TestDataContext : DataContext
 {
-    public TestDataContext(DbContextOptions<DataContext> options) : base(options) { }
+    public TestDataContext(DbContextOptions<DataContext> options) : base(options, skipSeeding: true)
+    {
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

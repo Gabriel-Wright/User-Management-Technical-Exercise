@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using UserManagement.Data;
 using UserManagement.Models;
 using UserManagement.Services.Domain;
@@ -483,7 +484,14 @@ public class UserServiceTests
     {
         var context = CreateContext();
         var mockEventBus = new Mock<IEventBus>();
-        var service = new UserService(context, mockEventBus.Object);
+        var mockUserSettings = new Mock<IOptions<UserSettings>>();
+        mockUserSettings
+            .Setup(s => s.Value)
+            .Returns(new UserSettings
+            {
+                DefaultPassword = "TestDefault123"
+            });
+        var service = new UserService(context, mockEventBus.Object, mockUserSettings.Object);
 
         var newUser = new User
         {
@@ -512,7 +520,14 @@ public class UserServiceTests
     {
         var context = CreateContext();
         var mockEventBus = new Mock<IEventBus>();
-        var service = new UserService(context, mockEventBus.Object);
+        var mockUserSettings = new Mock<IOptions<UserSettings>>();
+        mockUserSettings
+            .Setup(s => s.Value)
+            .Returns(new UserSettings
+            {
+                DefaultPassword = "TestDefault123"
+            });
+        var service = new UserService(context, mockEventBus.Object, mockUserSettings.Object);
 
         var existingUser = new User
         {
@@ -559,7 +574,7 @@ public class UserServiceTests
 
     private class TestDataContext : DataContext
     {
-        public TestDataContext(DbContextOptions<DataContext> options) : base(options) { }
+        public TestDataContext(DbContextOptions<DataContext> options) : base(options, skipSeeding: true) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -577,6 +592,7 @@ public class UserServiceTests
             Forename = "Mr",
             Surname = "Messy",
             Email = "messy@gmail.com",
+            PasswordHash = "Pass",
             IsActive = true,
             BirthDate = DateTime.Today.AddYears(-30)
         });
@@ -586,6 +602,7 @@ public class UserServiceTests
             Forename = "Mrs",
             Surname = "Tickle",
             Email = "tickle@yahoo.com",
+            PasswordHash = "Pass",
             IsActive = false,
             BirthDate = DateTime.Today.AddYears(-40)
         });
@@ -598,6 +615,7 @@ public class UserServiceTests
             Forename = "Harry",
             Surname = "Potter",
             Email = "gryffindorOne@gmail.com",
+            PasswordHash = "Pass",
             IsActive = true
         });
 
@@ -606,6 +624,7 @@ public class UserServiceTests
             Forename = "Ron",
             Surname = "Weasley",
             Email = "gryffindorTwo@yahoo.com",
+            PasswordHash = "Pass",
             IsActive = false
         });
 
@@ -614,6 +633,7 @@ public class UserServiceTests
             Forename = "Hermione",
             Surname = "Granger",
             Email = "gryffindorThree@aol.com",
+            PasswordHash = "Pass",
             IsActive = true
         });
 
@@ -622,6 +642,7 @@ public class UserServiceTests
             Forename = "Lord",
             Surname = "Voldemort",
             Email = "slytherine@askjeeves.com",
+            PasswordHash = "Pass",
             IsActive = false
         });
 
@@ -630,6 +651,7 @@ public class UserServiceTests
             Forename = "Hagrid",
             Surname = "Idk",
             Email = "groundskeeper@currys.com",
+            PasswordHash = "Pass",
             IsActive = false
         });
     }
@@ -637,6 +659,13 @@ public class UserServiceTests
     private UserService CreateUserService(DataContext context)
     {
         var mockEventBus = new Mock<IEventBus>();
-        return new UserService(context, mockEventBus.Object);
+        var mockUserSettings = new Mock<IOptions<UserSettings>>();
+        mockUserSettings
+            .Setup(s => s.Value)
+            .Returns(new UserSettings
+            {
+                DefaultPassword = "TestDefault123"
+            });
+        return new UserService(context, mockEventBus.Object, mockUserSettings.Object);
     }
 }

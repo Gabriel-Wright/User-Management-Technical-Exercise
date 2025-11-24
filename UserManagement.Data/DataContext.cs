@@ -30,6 +30,12 @@ public class DataContext : DbContext, IDataContext
         }
     }
 
+    protected DataContext(DbContextOptions options, bool skipSeeding)
+        : base(options)
+    {
+        //skips EnsureCreated + SeedUsers
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserAuditEntity>()
@@ -38,7 +44,6 @@ public class DataContext : DbContext, IDataContext
     .HasForeignKey(a => a.UserEntityId);
 
         modelBuilder.Entity<UserEntity>().HasQueryFilter(u => !u.Deleted);
-
     }
     public DbSet<UserEntity>? Users { get; set; }
 

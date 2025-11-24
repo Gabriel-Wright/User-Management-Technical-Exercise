@@ -1,13 +1,17 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using UserManagement.Data;
+using UserManagement.Services.Domain;
 using UserManagement.Services.Domain.Implementations;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Services.Events;
@@ -89,6 +93,20 @@ namespace UserManagement.Web
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
+            });
+
+            //Loading Default Password
+            builder.Services.Configure<UserSettings>(
+                builder.Configuration.GetSection("UserSettings"));
+
+            builder.Services.PostConfigure<UserSettings>(settings =>
+            {
+                var envPassword = Environment.GetEnvironmentVariable("UMS_DEFAULT_PASSWORD");
+
+                if (!string.IsNullOrWhiteSpace(envPassword))
+                {
+                    settings.DefaultPassword = envPassword;
+                }
             });
 
             //Data layer
@@ -179,6 +197,44 @@ namespace UserManagement.Web
                 Log.Fatal(ex, "Database connection validation failed. Application will stop.");
                 throw;
             }
+        }
+
+        // --------------------------------------------------------------
+        // CONFIGURE JWT Authentication
+        // --------------------------------------------------------------
+        private static void ConfigureJwtAuthentication(WebApplicationBuilder builder)
+        {
+            var secretKey = Environment.GetEnvironmentVariable("UMS_JWT_SECRET_KEY")
+                            ?? builder.Configuration["Ums_Jwt:SecretKey"]
+                            ?? throw new InvalidOperationException("JWT SecretKey not configured");
+
+            var issuer = builder.Configuration["Ums_Jwt:Issuer"] ?? "UserManagementAPI";
+            var audience = builder.Configuration["Ums_Jwt:Audience"] ?? "UserManagementUI";
+
+            Log.Information("Configuring JWT authentication with Issuer: {Issuer}, Audience: {Audience}",
+                issuer, audience);
+
+            builder.Services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                        ValidateIssuer = true,
+                        ValidIssuer = issuer,
+                        ValidateAudience = true,
+                        ValidAudience = audience,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            builder.Services.AddAuthorization();
         }
 
         // ---------------------------------------------------------------

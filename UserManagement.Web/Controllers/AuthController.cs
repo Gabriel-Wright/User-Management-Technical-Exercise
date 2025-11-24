@@ -1,14 +1,9 @@
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using UserManagement.Data;
-using UserManagement.Models;
-using UserManagement.Services.Domain;
+using Microsoft.AspNetCore.Authorization;
+using Serilog;
+using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Services.Domain.Login;
-using UserManagement.Web.Dtos;
 
 namespace UserManagement.WebMS.Controllers;
 
@@ -16,32 +11,32 @@ namespace UserManagement.WebMS.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly IDataContext _dataContext; // for now
+    private readonly IAuthService _authService;
 
-    public AuthController(IDataContext dataContext)
+    public AuthController(IAuthService authService)
     {
-        this._dataContext = dataContext;
+        this._authService = authService;
     }
+
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> AuthenticateAsync(string email, string password)
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var user = await _dataContext.GetAll<UserEntity>().FirstOrDefaultAsync(u => u.Email == email);
+        Log.Information("Login attempt for email: {Email}", request.Email);
 
-        if (user == null)
-            return BadRequest("no user"); //obvs combine these for full releasae - just for testing rn
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        if (new PasswordHasher<UserEntity>().VerifyHashedPassword(user, user.PasswordHash, password) == PasswordVerificationResult.Failed)
+        var result = await _authService.AuthenticateAsync(request.Email, request.Password);
+
+        if (result == null)
         {
-            return BadRequest("wrong pass");
+            Log.Warning("Login failed for email: {Email}", request.Email);
+            return Unauthorized(new { message = "Invalid email or password" });
         }
 
-        return Ok(new LoginResponse
-        {
-            Token = "blah",
-            Email = user.Email,
-            Role = user.UserRole,
-            Expiration = DateTime.UtcNow.AddMinutes(60)
-        });
+        Log.Information("Login successful for email: {Email}", request.Email);
+        return Ok(result);
     }
 
 }

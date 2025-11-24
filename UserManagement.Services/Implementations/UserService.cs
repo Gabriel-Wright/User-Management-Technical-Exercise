@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Serilog;
 using UserManagement.Data;
 using UserManagement.Models;
@@ -15,10 +17,10 @@ using UserMangement.Services.Events;
 namespace UserManagement.Services.Domain.Implementations;
 /// <summary>
 /// Service layer to go from Business logic to Data Layer -> including creation, update, retrieval, filtering, and deletion.
-/// 
+///
 /// Validation is performed here in service methods by a dedicated private method ValidateUser,.
-/// ValidationException is thrown if domain object is invalid. Exceptions then bubble up 
-/// to the controller calling the Service Layer. 
+/// ValidationException is thrown if domain object is invalid. Exceptions then bubble up
+/// to the controller calling the Service Layer.
 /// Idea here is to keeps the service focused on business logic and have exception handling and additional confirmation / failure
 /// logging above.
 /// CRUD operations here don't not automatically call SaveChangesAsync. This is for greater control, less coupled behaviour.
@@ -27,11 +29,14 @@ public class UserService : IUserService
 {
     private readonly IDataContext _dataContext;
     private readonly IEventBus _eventBus;
-    public UserService(IDataContext dataContext, IEventBus eventBus)
+    private readonly string _defaultPassword;
+    public UserService(IDataContext dataContext, IEventBus eventBus, IOptions<UserSettings> userSettings)
     {
         _dataContext = dataContext;
         _eventBus = eventBus;
+        _defaultPassword = userSettings.Value.DefaultPassword;
     }
+
     public async Task<IEnumerable<User>> GetAllAsync()
     {
         Log.Information("Fetching all Users.");
@@ -85,14 +90,13 @@ public class UserService : IUserService
 
         return userEntity == null ? null : UserMapper.ToDomainUser(userEntity);
     }
-
     public async Task<User> AddUserAsync(User user)
     {
         Log.Information("Attempting to add user: {@user}", user);
         ValidateUser(user);
 
         var existing = await _dataContext.GetAll<UserEntity>()
-        .FirstOrDefaultAsync(u => u.Email.ToLower() == user.Email.ToLower());
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == user.Email.ToLower());
 
         if (existing != null)
         {
@@ -100,11 +104,15 @@ public class UserService : IUserService
             throw new InvalidOperationException($"User with email '{user.Email}' already exists.");
         }
 
+        Log.Information("Adding user {Forename} {Surname} to DB", user.Forename, user.Surname);
 
-        Log.Information("Adding user {Id}, {Forename} {Surname} to DB", user.Id, user.Forename, user.Surname);
         var userEntity = UserMapper.ToUserEntity(user);
+
+        EnsurePasswordHash(userEntity);
+
         await _dataContext.CreateAsync(userEntity);
         await SaveAsync();
+
         user.Id = userEntity.Id;
         await _eventBus.PublishAsync(new UserCreatedEvent
         {
@@ -113,6 +121,18 @@ public class UserService : IUserService
         });
 
         return user;
+    }
+
+    //Ensures user has a valid password hash -> if not use default password. Which is expected rn
+    private void EnsurePasswordHash(UserEntity userEntity)
+    {
+        if (string.IsNullOrEmpty(userEntity.PasswordHash))
+        {
+            var passwordHasher = new PasswordHasher<UserEntity>();
+            userEntity.PasswordHash = passwordHasher.HashPassword(userEntity, _defaultPassword);
+
+            Log.Information("Default password set for user {Email}.", userEntity.Email);
+        }
     }
 
     public async Task<User> UpdateUserAsync(User user)
