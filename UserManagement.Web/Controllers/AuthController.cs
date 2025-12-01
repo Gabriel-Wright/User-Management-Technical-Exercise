@@ -1,9 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using UserManagement.Services.Domain.Interfaces;
 using UserManagement.Services.Domain.Login;
+using LoginRequest = UserManagement.Services.Domain.Login.LoginRequest;
 
 namespace UserManagement.WebMS.Controllers;
 
@@ -12,10 +15,12 @@ namespace UserManagement.WebMS.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserService _userService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IUserService userService)
     {
         this._authService = authService;
+        this._userService = userService;
     }
 
     [HttpPost("login")]

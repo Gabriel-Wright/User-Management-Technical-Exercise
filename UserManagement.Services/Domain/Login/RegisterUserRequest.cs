@@ -9,25 +9,25 @@ public class RegisterUserRequest
 {
     [Required]
     [EmailAddress]
-    public string Email { get; set; } = string.Empty;
+    public required string Email { get; set; }
 
     [Required]
     [MinLength(8, ErrorMessage = "Password must be at least 8 characters")]
 
-    public string Password { get; set; } = string.Empty;
+    public required string Password { get; set; }
 
     [Required]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "First name must be between 2 and 50 characters")]
     [RegularExpression(@"^[a-zA-Z\s\-']+$", ErrorMessage = "First name can only contain letters, spaces, hyphens, and apostrophes")]
-    public string Forename { get; set; } = string.Empty;
+    public required string Forename { get; set; }
 
     [Required]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 50 characters")]
     [RegularExpression(@"^[a-zA-Z\s\-']+$", ErrorMessage = "Last name can only contain letters, spaces, hyphens, and apostrophes")]
-    public string Surname { get; set; } = string.Empty;
+    public required string Surname { get; set; }
 
     [Required(ErrorMessage = "Date of birth is required")]
     [DataType(DataType.Date)]
     [BirthDate(MinAge = 18, MaxAge = 120)]
-    public DateTime? BirthDate { get; set; }
+    public required DateTime BirthDate { get; set; }
 }

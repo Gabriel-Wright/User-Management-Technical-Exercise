@@ -15,18 +15,20 @@ namespace UserManagement.WebMS.Controllers;
 /// validated again with more business specific logic on the service layer. The error messages given when input validation
 /// i.e. format of JSON from Dto fails - are quite generic, since UI layer should cover this, if this project
 /// was to be expanded though - more detailed error messaging here would be good.
-/// 
-/// Currently Endpoints are fixed - if expanded it might be better to have a filter based API so the end points do 
-/// not have to be so specific. But for the current purposes this serves the specification. 
+///
+/// Currently Endpoints are fixed - if expanded it might be better to have a filter based API so the end points do
+/// not have to be so specific. But for the current purposes this serves the specification.
 /// </summary>
 
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
-    public UsersController(IUserService userService)
+    private readonly IAuthService _authService;
+    public UsersController(IUserService userService, IAuthService authService)
     {
         _userService = userService;
+        _authService = authService;
     }
 
     /// <summary>
@@ -45,7 +47,7 @@ public class UsersController : ControllerBase
 
     /// <summary>
     /// Get All users that match query passed to it. I.E can search for specific keywords,
-    /// whether a user is active here -> also sort how large you want the query to be, how many 
+    /// whether a user is active here -> also sort how large you want the query to be, how many
     /// and it what order you want the users returned.
     /// </summary>
     /// <param name="queryDto"></param>
@@ -114,7 +116,13 @@ public class UsersController : ControllerBase
         var user = UserToUserCreateDtoMapper.ToUser(createDto);
         var createdUser = await _userService.AddUserAsync(user);
 
+        //set default password
+        await _authService.SetDefaultUserPasswordAsync(createdUser);
+
+
         var resultDto = UserDtoMapper.ToDto(createdUser);
+
+
         return CreatedAtAction(nameof(GetUsersById), new { id = resultDto.Id }, resultDto);
     }
 

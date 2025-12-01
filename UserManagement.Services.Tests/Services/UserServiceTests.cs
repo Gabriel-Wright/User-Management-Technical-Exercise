@@ -484,14 +484,7 @@ public class UserServiceTests
     {
         var context = CreateContext();
         var mockEventBus = new Mock<IEventBus>();
-        var mockUserSettings = new Mock<IOptions<UserSettings>>();
-        mockUserSettings
-            .Setup(s => s.Value)
-            .Returns(new UserSettings
-            {
-                DefaultPassword = "TestDefault123"
-            });
-        var service = new UserService(context, mockEventBus.Object, mockUserSettings.Object);
+        var service = new UserService(context, mockEventBus.Object);
 
         var newUser = new User
         {
@@ -520,14 +513,7 @@ public class UserServiceTests
     {
         var context = CreateContext();
         var mockEventBus = new Mock<IEventBus>();
-        var mockUserSettings = new Mock<IOptions<UserSettings>>();
-        mockUserSettings
-            .Setup(s => s.Value)
-            .Returns(new UserSettings
-            {
-                DefaultPassword = "TestDefault123"
-            });
-        var service = new UserService(context, mockEventBus.Object, mockUserSettings.Object);
+        var service = new UserService(context, mockEventBus.Object);
 
         var existingUser = new User
         {
@@ -659,13 +645,6 @@ public class UserServiceTests
     private UserService CreateUserService(DataContext context)
     {
         var mockEventBus = new Mock<IEventBus>();
-        var mockUserSettings = new Mock<IOptions<UserSettings>>();
-        mockUserSettings
-            .Setup(s => s.Value)
-            .Returns(new UserSettings
-            {
-                DefaultPassword = "TestDefault123"
-            });
-        return new UserService(context, mockEventBus.Object, mockUserSettings.Object);
+        return new UserService(context, mockEventBus.Object);
     }
 }

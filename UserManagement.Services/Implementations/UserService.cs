@@ -29,12 +29,10 @@ public class UserService : IUserService
 {
     private readonly IDataContext _dataContext;
     private readonly IEventBus _eventBus;
-    private readonly string _defaultPassword;
-    public UserService(IDataContext dataContext, IEventBus eventBus, IOptions<UserSettings> userSettings)
+    public UserService(IDataContext dataContext, IEventBus eventBus)
     {
         _dataContext = dataContext;
         _eventBus = eventBus;
-        _defaultPassword = userSettings.Value.DefaultPassword;
     }
 
     public async Task<IEnumerable<User>> GetAllAsync()
@@ -108,8 +106,6 @@ public class UserService : IUserService
 
         var userEntity = UserMapper.ToUserEntity(user);
 
-        EnsurePasswordHash(userEntity);
-
         await _dataContext.CreateAsync(userEntity);
         await SaveAsync();
 
@@ -121,18 +117,6 @@ public class UserService : IUserService
         });
 
         return user;
-    }
-
-    //Ensures user has a valid password hash -> if not use default password. Which is expected rn
-    private void EnsurePasswordHash(UserEntity userEntity)
-    {
-        if (string.IsNullOrEmpty(userEntity.PasswordHash))
-        {
-            var passwordHasher = new PasswordHasher<UserEntity>();
-            userEntity.PasswordHash = passwordHasher.HashPassword(userEntity, _defaultPassword);
-
-            Log.Information("Default password set for user {Email}.", userEntity.Email);
-        }
     }
 
     public async Task<User> UpdateUserAsync(User user)
